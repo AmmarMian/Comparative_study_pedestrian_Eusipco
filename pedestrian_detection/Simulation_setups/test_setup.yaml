@@ -3,7 +3,7 @@
 # @Date:   2019-10-28 14:40:31
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-11-12 18:06:12
+# @Last Modified time: 2019-11-21 16:21:36
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -24,7 +24,7 @@
 global_setups:
   Triton_jobs:
     parallel: True  # If for a given Triton job, we use parallel jobs for processing using joblib library.
-    number_of_jobs: 16  # Number of jobs in joblib library to use.
+    number_of_jobs: 12  # Number of jobs in joblib library to use.
     memory: '24G' # Memory to ask when submitting a job to Triton.
     number_cpus: 8 # Number of cpus to ask ask when submitting a job to Triton.
 
@@ -36,13 +36,13 @@ dataset:
 # Sub-regions parameters
 sub-regions:
   method: 'random_overlap' # Method for sub-regions sampling. Either 'random' or 'random_overlap'.
-  seed: 77 # Seed to reproduce the window sampling.
-  number_positive_windows: 70 # Number of windows to select for positive pedestrian images.
+  seed: 170 # Seed to reproduce the window sampling.
+  number_positive_windows: 100 # Number of windows to select for positive pedestrian images.
   number_negative_windows: 10 # Number of windows to select for negative pedestrian images.
-  n_h: 5 # Number so that the minimum height of a region is \ceil{h/n_h}.
-  n_w: 5 # Number so that the minimum width of a region is \ceil{w/n_w}.
+  n_h: 10 # Number so that the minimum height of a region is \ceil{h/n_h}.
+  n_w: 10 # Number so that the minimum width of a region is \ceil{w/n_w}.
   overlap_percent: 75 # Maximum overlap between regions in 'random_overlap' method.
-  timeout_method: 10 # Maximum time in minutes to sample regions in 'random_overlap' method.
+  timeout_method: 5 # Maximum time in minutes to sample regions in 'random_overlap' method.
   progressbar: True # Show a tqdm progressbar or not for the sub-regions sampling.
 
 # Machine learning features parameters
@@ -57,6 +57,48 @@ machine_learning_features:
 reducing_samples:
   method: 'Variance to Log-Euclidean mean'
   method_args: '[[10e-9, 50, None, None], None]' # A list of arguments by order: mean_function arugments, distance_function arguments.
-  number_to_keep: 50 # Number of sub-regions to keep for positive images.
+  number_to_keep: 10 # Number of sub-regions to keep for positive images.
   shuffle: True # Shuffle the features after reducing them.
   seed: 15 # Seed for shuffling the features.
+
+# Classification methods. Each sub-item of this item is a different methodology with associated paremeters
+# that will be coverted to a dict. A boolean is used to allow enabling hte method or not.
+classification_methods:
+  sklearn_svc_rbf:
+    # See details at:
+    # https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+    method_name: 'C-Support Vector Classification with Gaussian kernel'
+    parsing_string: 'sklearn svc' # Used for parsing the method in the parser function
+    method_args:
+       C: 1.0 # Penalty parameter C of the error term.
+       kernel: 'rbf' # Specifies the kernel type to be used in the algorithm. It must be one of 'linear', 'poly', 'rbf', 'sigmoid', 'precomputed' or a callable.
+       degree: 3 # Degree of the polynomial kernel function ('poly'). Ignored by all other kernels.
+       gamma: 'auto' # Kernel coefficient for 'rbf', 'poly' and 'sigmoid'.
+       coef0: 0.0 # Independent term in kernel function. It is only significant in 'poly' and 'sigmoid'.
+       shrinking: True # Whether to use the shrinking heuristic.
+       probability: False # Whether to enable probability estimates. This must be enabled prior to calling fit, and will slow down that method.
+       tol: 0.001 # Tolerance for stopping criterion.
+       # cache_size: 2000 # Specify the size of the kernel cache (in MB).
+       # class_weight: None # Set the parameter C of class i to class_weight[i]*C for SVC.
+       verbose: False # Enable verbose output.
+       max_iter: -1 # Hard limit on iterations within solver, or -1 for no limit.
+       decision_function_shape: 'ovr' # Whether to return a one-vs-rest ('ovr') decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one ('ovo') decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2). However, one-vs-one ('ovo') is always used as multi-class strategy.
+       random_state: 'None' # The seed of the pseudo random number generator used when shuffling the data for probability estimates.
+
+  sklearn_svc_linear:
+    # See details at:
+    # https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+    method_name: 'C-Support Vector Classification with Linear kernel'
+    parsing_string: 'sklearn svc' # Used for parsing the method in the parser function
+    method_args:
+       C: 1.0 # Penalty parameter C of the error term.
+       kernel: 'linear' # Specifies the kernel type to be used in the algorithm. It must be one of 'linear', 'poly', 'rbf', 'sigmoid', 'precomputed' or a callable.
+       shrinking: True # Whether to use the shrinking heuristic.
+       probability: False # Whether to enable probability estimates. This must be enabled prior to calling fit, and will slow down that method.
+       tol: 0.001 # Tolerance for stopping criterion.
+       # cache_size: 2000 # Specify the size of the kernel cache (in MB).
+       # class_weight: None # Set the parameter C of class i to class_weight[i]*C for SVC.
+       verbose: False # Enable verbose output.
+       max_iter: -1 # Hard limit on iterations within solver, or -1 for no limit.
+       decision_function_shape: 'ovr' # Whether to return a one-vs-rest ('ovr') decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one ('ovo') decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2). However, one-vs-one ('ovo') is always used as multi-class strategy.
+       random_state: 'None' # The seed of the pseudo random number generator used when shuffling the data for probability estimates.
