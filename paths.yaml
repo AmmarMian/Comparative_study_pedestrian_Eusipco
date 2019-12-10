@@ -1,0 +1,12 @@
+project:
+    name: "Riemannian pedestrian detection"
+
+data_path:
+    INRIA:
+        base: "../Datasets/pedestrian_detection/INRIAPerson/"
+        train: "train_64x128_H96/"
+        test: "test_64x128_H96/"
+
+    DaimlerChrysler:
+        base: "../Datasets/pedestrian_detection/DaimlerChrysler/"
+

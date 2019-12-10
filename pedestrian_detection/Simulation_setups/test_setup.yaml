@@ -1,0 +1,62 @@
+# @Author: miana1
+# @Description: Simulation setup file for testing the simulation setup system
+# @Date:   2019-10-28 14:40:31
+# @E-mail: ammar.mian@aalto.fi
+# @Last Modified by:   miana1
+# @Last Modified time: 2019-11-12 18:06:12
+# ----------------------------------------------------------------------------
+# Copyright 2019 Aalto University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ----------------------------------------------------------------------------
+
+# Parameters that govern the execution of all scripts
+global_setups:
+  Triton_jobs:
+    parallel: True  # If for a given Triton job, we use parallel jobs for processing using joblib library.
+    number_of_jobs: 16  # Number of jobs in joblib library to use.
+    memory: '24G' # Memory to ask when submitting a job to Triton.
+    number_cpus: 8 # Number of cpus to ask ask when submitting a job to Triton.
+
+# Dataset parameters
+dataset:
+  name: 'INRIA' # Name of the dataset to read.
+  original_train_test: False # Depending on the dataset, keep the orignal splitting of train and test. TODO: NOT IMPLEMENTED YET.
+
+# Sub-regions parameters
+sub-regions:
+  method: 'random_overlap' # Method for sub-regions sampling. Either 'random' or 'random_overlap'.
+  seed: 77 # Seed to reproduce the window sampling.
+  number_positive_windows: 70 # Number of windows to select for positive pedestrian images.
+  number_negative_windows: 10 # Number of windows to select for negative pedestrian images.
+  n_h: 5 # Number so that the minimum height of a region is \ceil{h/n_h}.
+  n_w: 5 # Number so that the minimum width of a region is \ceil{w/n_w}.
+  overlap_percent: 75 # Maximum overlap between regions in 'random_overlap' method.
+  timeout_method: 10 # Maximum time in minutes to sample regions in 'random_overlap' method.
+  progressbar: True # Show a tqdm progressbar or not for the sub-regions sampling.
+
+# Machine learning features parameters
+machine_learning_features:
+  method: 'SCM normalized by image' # Method to compute features for machine learning algorithms.
+  method_args: 'False' # A string of arguments that will be parsed in the method definition.
+  shuffle: False # Shuffle the features after computing them.
+  seed: 15 # Seed for shuffling the features.
+  delete_after_use: True # Delete features file after classification ended to save space.
+
+# Reducing Machine learning features parameters
+reducing_samples:
+  method: 'Variance to Log-Euclidean mean'
+  method_args: '[[10e-9, 50, None, None], None]' # A list of arguments by order: mean_function arugments, distance_function arguments.
+  number_to_keep: 50 # Number of sub-regions to keep for positive images.
+  shuffle: True # Shuffle the features after reducing them.
+  seed: 15 # Seed for shuffling the features.
