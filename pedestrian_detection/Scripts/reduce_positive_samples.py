@@ -6,7 +6,7 @@
 # @Date:   2019-11-04 13:27:55
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-12-10 17:07:15
+# @Last Modified time: 2020-01-14 11:31:36
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     # Managing inputs of this script
     parser = argparse.ArgumentParser(description='Reduce positive samples according to some criterion and format data.')
-    parser.add_argument("data_file", help="Path (From base to the file containing machine learning features")
+    parser.add_argument("data_file", help="Path (From base) to the file containing machine learning features")
     parser.add_argument("method_name",  help="Name of method to reduce samples.")
     parser.add_argument("method_args",  help="Arguments to the method")
     parser.add_argument("number_to_keep",  type=int, help="Number of positive samples to keep")

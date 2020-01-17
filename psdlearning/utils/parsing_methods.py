@@ -5,7 +5,7 @@
 # @Date:   2019-11-11 16:36:04
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-12-10 17:54:40
+# @Last Modified time: 2020-01-14 13:58:58
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -24,11 +24,13 @@
 
 import numpy as np
 from sklearn.svm import SVC
-from utils import MethodNotRecognized
 
 # ----------------------------------------------------------------------------
 # 1 - Global parser for all methods
 # ----------------------------------------------------------------------------
+class MethodNotRecognized(Exception):
+    pass
+
 def parse_machine_learning_method(parsing_string, method_name, method_args):
     """ A function to parse choices for the machine learning algorithm
 
@@ -44,7 +46,7 @@ def parse_machine_learning_method(parsing_string, method_name, method_args):
         """
 
     if parsing_string == 'sklearn svc':
-        return None
+        return sklearn_svc_method(method_name, method_args)
 
     else:
         logging.error("The method %s is not recognized, ending here", method_name)
@@ -78,6 +80,8 @@ class machine_learning_method():
         return None
 
 
+
+
 class sklearn_svc_method(machine_learning_method):
     """
        A wrapper for the svc algorithm of sklearn: More details at:
@@ -88,12 +92,30 @@ class sklearn_svc_method(machine_learning_method):
         self.init_method()
 
     def init_method(self):
-        self.clasifier = SVC(**self.method_args)
+        self.classifier = SVC(**self.method_args)
 
 
-    def fit(self, X_train ,y_train):
-        self.clasifier.fit(X_train, y_train)
+    def fit(self, X_train, y_train):
+        """
+        Inputs:
+            * X_train = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+            * y_train = ndarray shape (n_samples, 1)
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_train.shape[:2]
+        self.classifier.fit(X_train.reshape((n_samples, n_channels**2)), y_train)
 
 
     def predict(self, X_test):
-        return self.clasifier.predict(X_test)
+        """
+        Inputs:
+            * X_test = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+        Outputs:
+            * y_test = ndarray shape (n_samples, 1) of predicted
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_test.shape[:2]
+        return self.classifier.predict(X_test.reshape((n_samples, n_channels**2)))
+

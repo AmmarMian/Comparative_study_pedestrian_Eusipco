@@ -8,5 +8,5 @@ data_path:
         test: "test_64x128_H96/"
 
     DaimlerChrysler:
-        base: "../Datasets/pedestrian_detection/DaimlerChrysler/"
+        base: "../Datasets/pedestrian_detection/DaimlerChrysler/DC-ped-dataset_base/"
 

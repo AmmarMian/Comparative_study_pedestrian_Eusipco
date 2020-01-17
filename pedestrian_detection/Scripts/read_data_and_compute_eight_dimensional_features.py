@@ -5,7 +5,7 @@
 # @Date:   2019-10-17 15:21:21
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-12-10 17:17:44
+# @Last Modified time: 2020-01-16 10:57:57
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -53,8 +53,11 @@ def read_dataset_from_choice(choice, absolute_base_path, paths, shuffling, shuff
         return dataset
 
     elif choice == 'DaimerChrysler':
-        logging.error('Sorry reading of %s dataset is not implemented yet' % choice)
-        return None
+        path_to_dataset_base = os.path.join(absolute_base_path,
+                        paths['data_path']['DaimlerChrysler']['base'])
+        dataset = DaimerChrysler_base_dataset(path_to_dataset_base)
+        dataset.read_data(shuffling=shuffling, seed=shuffle_seed)
+        return dataset
 
     else:
         logging.error('Sorry %s dataset is not recognized' % choice)
@@ -112,8 +115,9 @@ if __name__ == '__main__':
                 logging.info("Writing dataset into %s", path_to_data_storage_file)
                 pickle.dump(dataset, f)
 
-        except NameError:
-            logging.info("Ending execution here")
+        except NameError as e:
+            logging.info("NameError, Ending execution here")
+            logging.error(str(e))
 
     else:
         logging.info("File %s already exists, ending here", path_to_data_storage_file)

@@ -1,9 +1,10 @@
 # @Author: miana1
-# @Description: Simulation setup file for testing the simulation setup system
-# @Date:   2019-10-28 14:40:31
+# @Description: Simulation setup file for a basic test on running on Triton
+#               with INRIA dataset
+# @Date:   2020-01-17 10:47:39
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-14 16:59:11
+# @Last Modified time: 2020-01-17 13:15:49
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -30,14 +31,14 @@ global_setups:
 
 # Dataset parameters
 dataset:
-  name: 'DaimerChrysler' # Name of the dataset to read.
+  name: 'INRIA' # Name of the dataset to read.
   original_train_test: False # Depending on the dataset, keep the orignal splitting of train and test. TODO: NOT IMPLEMENTED YET.
 
 # Sub-regions parameters
 sub-regions:
   method: 'random' # Method for sub-regions sampling. Either 'random' or 'random_overlap'.
   seed: 170 # Seed to reproduce the window sampling.
-  number_positive_windows: 50 # Number of windows to select for positive pedestrian images.
+  number_positive_windows: 100 # Number of windows to select for positive pedestrian images.
   number_negative_windows: 10 # Number of windows to select for negative pedestrian images.
   n_h: 10 # Number so that the minimum height of a region is \ceil{h/n_h}.
   n_w: 10 # Number so that the minimum width of a region is \ceil{w/n_w}.

@@ -4,7 +4,7 @@
 # @Date:   2019-10-17 13:39:08
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-12-10 17:20:31
+# @Last Modified time: 2020-01-16 14:25:30
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -212,7 +212,7 @@ class pedestrian_dataset():
             logging.error("The data was not available, returning None")
             return None
 
-    def shuffle_images(self):
+    def shuffle_images(self, seed):
         logging.info("Shuffling images as requested for class %s",
                             self.name)
         # We have to permute and find again where the training and test set have
@@ -341,7 +341,7 @@ class INRIA_dataset(pedestrian_dataset):
         # 4 - Shuffling images if needed
         # --------------------------------------------------------------------
         if shuffling:
-           self.shuffle_images()
+           self.shuffle_images(seed)
         else:
             self.indexes_training = indexes_training
             self.indexes_testing = indexes_testing
@@ -382,7 +382,7 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
         image_paths = []
         images_labels = []
         for data_index in range(1,4):
-            path_this_data_batch = os.join(self.dataset_path, str(data_index))
+            path_this_data_batch = os.path.join(self.dataset_path, str(data_index))
 
             # Positive images
             positive_training_images_names_list_temp = [os.path.join(path_this_data_batch, 'ped_examples', file)
@@ -412,11 +412,10 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
         # --------------------------------------------------------------------
         # 2 - Reading testing images
         # --------------------------------------------------------------------
-        path_to_test = os.path.join(self.dataset_path, test_directory)
         logging.info("Reading testing images se for class %s", self.name)
 
         for data_index in ['T1', 'T2']:
-            path_this_data_batch = os.join(self.dataset_path, data_index)
+            path_this_data_batch = os.path.join(self.dataset_path, data_index)
 
             # Positive images
             positive_testing_images_names_list_temp = [os.path.join(path_this_data_batch, 'ped_examples', file)
@@ -445,14 +444,14 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
 
         self.images_labels = images_labels
         self.images_list = images_list
-        self.images_paths = images_paths
+        self.images_paths = image_paths
         self.number_of_images = len(self.images_labels)
 
         # --------------------------------------------------------------------
         # 3 - Shuffling images if needed
         # --------------------------------------------------------------------
         if shuffling:
-            self.shuffle_images()
+            self.shuffle_images(seed)
         else:
             self.indexes_training = indexes_training
             self.indexes_testing = indexes_testing
@@ -466,17 +465,19 @@ def _calculate_centered_window(image_dim, width,height):
         return (x1,y1,x2,y2)
 
 
-def _read_pgm(pgmf):
+def _read_pgm(_image_path):
     """Return a raster of integers from a PGM as a list of lists."""
-    assert pgmf.readline() == b'P5\n'
-    (width, height) = [int(i) for i in pgmf.readline().split()]
-    depth = int(pgmf.readline())
-    assert depth <= 255
 
-    raster = []
-    for y in range(height):
-        row = []
-        for y in range(width):
-            row.append(ord(pgmf.read(1)))
-        raster.append(row)
-    return raster
+    with open(_image_path, 'rb') as pgmf:
+        assert pgmf.readline() == b'P5\n'
+        (width, height) = [int(i) for i in pgmf.readline().split()]
+        depth = int(pgmf.readline())
+        assert depth <= 255
+
+        raster = []
+        for y in range(height):
+            row = []
+            for y in range(width):
+                row.append(ord(pgmf.read(1)))
+            raster.append(row)
+        return raster
