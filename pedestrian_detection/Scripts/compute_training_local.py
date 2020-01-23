@@ -2,12 +2,12 @@
 # @Author: miana1
 # @Description: A file that reads the simulation setup and launch the training of
 #               all the methods chosen on the training data.
-#               Version where everything is done on a local machine and there 
+#               Version where everything is done on a local machine and there
 #               is no job system.
 # @Date:   2020-01-14 11:19:58
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-17 13:08:44
+# @Last Modified time: 2020-01-23 11:29:44
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -33,7 +33,6 @@ import numpy as np
 from tqdm import tqdm, trange
 from sklearn.model_selection import KFold
 from copy import deepcopy
-from joblib import Parallel, delayed
 from sklearn.utils import shuffle
 
 def _do_train_test_one_method(X_train, y_train, X_test, y_test, method):
@@ -42,6 +41,7 @@ def _do_train_test_one_method(X_train, y_train, X_test, y_test, method):
     y_predicted = method_this_fold.predict(X_test)
     accuracy = (y_test == y_predicted).sum() / len(y_test)
     return [accuracy, method_this_fold]
+
 
 if __name__ == '__main__':
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     sys.path.insert(0, absolute_base_path)
     from global_utils import *
     from psdlearning.utils import algebra
-    from psdlearning.utils import parsing_methods
+    from psdlearning import parsing_methods
 
     # Read logging configuration
     configure_logging(os.path.join(absolute_base_path, "logging.yaml"))
@@ -89,11 +89,20 @@ if __name__ == '__main__':
     dataset = None
     X_train = []
     y_train = []
+    number_non_spd = 0
     for index in trange(len(train_samples)):
         regions_samples = train_samples[index]
         for sample in regions_samples:
-            X_train.append(algebra.unvech(sample))
-            y_train.append(train_labels[index])
+            covariance = algebra.unvech(sample)
+
+            # Discarding the non SPD matrices
+            if algebra.is_pos_def(covariance):
+                X_train.append(covariance)
+                y_train.append(train_labels[index])
+            else:
+                number_non_spd += 1
+    if number_non_spd > 0:
+        logging.warning(f'There was {number_non_spd} non SPD matrices discarded among the samples')
     X = np.array(X_train)
     y = np.array(y_train)
     train_samples = None
@@ -102,9 +111,11 @@ if __name__ == '__main__':
     # Parsing methods
     logging.info('Parsing classification methods')
     methods_list = []
-    for method in simulation_setup['classification_methods'].values():
-        methods_list.append(parsing_methods.parse_machine_learning_method(method['parsing_string'],
-                            method['method_name'], method['method_args']))
+    for method_input in simulation_setup['classification_methods'].values():
+        method = parsing_methods.parse_machine_learning_method(method_input['parsing_string'],
+                            method_input['method_name'], method_input['method_args'])
+        method.set_parallel(args.parallel, args.n_jobs)
+        methods_list.append(method)
 
     # Doing K-fold splitting
     if simulation_setup['train']['pre-shuffle']:
@@ -126,19 +137,11 @@ if __name__ == '__main__':
         methods_list_this_fold = []
         accuracy_list_this_fold = []
 
-        if args.parallel:
-            results = Parallel(n_jobs=args.n_jobs)(delayed(_do_train_test_one_method)(X_train,
-                                     y_train, X_test, y_test, method) for method in methods_list)
-            for res in results:
-                accuracy_list_this_fold.append(res[0])
-                methods_list_this_fold.append(res[1])
-
-        else:
-            for method in tqdm(methods_list):
-                accuracy, method_this_fold =_do_train_test_one_method(X_train,
-                                                y_train, X_test, y_test, method)
-                accuracy_list_this_fold.append(accuracy)
-                methods_list_this_fold.append(method_this_fold)
+        for method in tqdm(methods_list):
+            accuracy, method_this_fold =_do_train_test_one_method(X_train,
+                                            y_train, X_test, y_test, method)
+            accuracy_list_this_fold.append(accuracy)
+            methods_list_this_fold.append(method_this_fold)
 
         methods_k_fold.append(methods_list_this_fold)
         accuracy_list.append(accuracy_list_this_fold)
@@ -151,6 +154,4 @@ if __name__ == '__main__':
     logging.info('Saving training results')
     with open(os.path.join(os.path.dirname(path_to_machine_learning_features_data_file), 'Results_training'), 'wb') as f:
         pickle.dump([methods_list, accuracy_list], f)
-
-
 

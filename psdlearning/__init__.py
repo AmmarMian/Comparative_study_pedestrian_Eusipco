@@ -4,7 +4,7 @@
 # @Date:   2019-12-10 16:46:12
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-12-10 16:47:25
+# @Last Modified time: 2020-01-21 15:13:33
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -20,3 +20,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+
+import os
+import sys
+folder_of_present_script = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.join(folder_of_present_script, '../'))
+

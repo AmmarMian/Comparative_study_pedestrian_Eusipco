@@ -4,7 +4,7 @@
 # @Date:   2019-10-24 16:01:13
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-10-29 13:15:58
+# @Last Modified time: 2020-01-22 13:58:16
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -27,6 +27,9 @@ from joblib import Parallel, delayed
 import logging
 from tqdm import tqdm
 
+
+def is_pos_def(x):
+    return np.all(np.linalg.eigvals(x) > 0)
 
 def matprint(mat, fmt="g"):
     """ A function to pretty print a matrix.
