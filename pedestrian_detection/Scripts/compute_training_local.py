@@ -7,7 +7,7 @@
 # @Date:   2020-01-14 11:19:58
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-23 11:29:44
+# @Last Modified time: 2020-01-24 12:03:30
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -108,6 +108,7 @@ if __name__ == '__main__':
     train_samples = None
     train_labels = None
 
+
     # Parsing methods
     logging.info('Parsing classification methods')
     methods_list = []
@@ -120,6 +121,7 @@ if __name__ == '__main__':
     # Doing K-fold splitting
     if simulation_setup['train']['pre-shuffle']:
         X, y,  = shuffle(X, y, random_state=simulation_setup['train']['seed'])
+
     kf = KFold(n_splits=simulation_setup['train']['n_splits'],
                 random_state= simulation_setup['train']['seed'])
     kf.get_n_splits(X)

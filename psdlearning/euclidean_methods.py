@@ -4,7 +4,7 @@
 # @Date:   2020-01-21 14:23:19
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-21 15:29:25
+# @Last Modified time: 2020-01-24 12:56:40
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -34,7 +34,7 @@ class sklearn_svc_method(machine_learning_method):
         self.init_method()
 
     def init_method(self):
-        self.classifier = SVC(self.method_args)
+        self.classifier = SVC(**self.method_args)
 
 
     def fit(self, X_train, y_train):

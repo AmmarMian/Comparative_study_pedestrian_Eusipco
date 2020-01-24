@@ -4,7 +4,7 @@
 # @Date:   2020-01-21 14:25:05
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-23 11:29:54
+# @Last Modified time: 2020-01-24 14:49:32
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -26,7 +26,7 @@ import logging
 from .utils.base import *
 from sklearn.svm import SVC
 from pyriemann.utils.distance import distance_logeuclid
-from pyriemann.utils.mean import mean_riemann
+from pyriemann.utils.mean import mean_riemann, mean_logeuclid
 import numpy as np
 from tqdm import trange, tqdm
 from itertools import combinations
@@ -96,6 +96,10 @@ class spd_rbf_kernel_svc(machine_learning_method):
         del svc_args['p']
         self.classifier = SVC(**self.method_args)
 
+        # Will serve to keep in memory the training samples needed
+        # To compute the Gram matrix in prediction
+        self.X_train = None
+
 
     def __str__(self):
         string_to_print = f"spd_rbf_kernel_svc(gamma={self.gamma}, p={self.p})"
@@ -104,7 +108,8 @@ class spd_rbf_kernel_svc(machine_learning_method):
 
 
     def _compute_gamma_auto(self, X_train):
-        mu = mean_riemann(X_train)
+        # mu = mean_riemann(X_train)
+        mu = mean_logeuclid(X_train)
         sigma = 0
         for matrix in X_train:
             sigma += np.power(distance_logeuclid(matrix, mu), self.p)
@@ -139,13 +144,16 @@ class spd_rbf_kernel_svc(machine_learning_method):
                                             for i,j in indices )
             for in_product, index in zip(G_temp, indices):
                 G[index[0],index[1]] = in_product
+                G[index[1],index[0]] = in_product
         else:
-            logging.info('Doing it sequentially parallel')
+            logging.info('Doing it sequentially')
             for i,j in tqdm(indices):
                 G[i,j] = self.kernel(X_train[i,:,:], X_train[j,:,:])
                 G[j,i] = G[i,j]
         logging.info('Done')
         self.classifier.fit(G, y_train)
+        G = None
+        self.X_train = X_train
         logging.info('Finished training')
 
 
@@ -161,20 +169,36 @@ class spd_rbf_kernel_svc(machine_learning_method):
 
         # Computing Gram matrix
         logging.info(f'Predicting {X_test.shape[0]} samples based on Riemannian RBF kernel SVC')
-        n_samples = X_test.shape[0]
+        n_samples_train = self.X_train.shape[0]
+        n_samples_test = X_test.shape[0]
         logging.info('Computing Gram matrix')
-        G = np.eye(n_samples)
-        indices = combinations(range(n_samples), r=2)
+        G = np.zeros((n_samples_test, n_samples_train))
+
+        # Separating the case n_samples_test < n_samples_train from the other
+        if n_samples_test <= n_samples_train:
+            indices = np.triu_indices(n_samples_test,m=n_samples_train)
+        else:
+            indices = np.tril_indices(n_samples_test,m=n_samples_train)
+
         if self.parallel:
             G_temp = Parallel(n_jobs=self.n_jobs)(delayed(
-                       self.kernel)(X_test[i, :, :], X_test[j,:,:])
-                                            for i,j in indices )
+                       self.kernel)(X_test[i, :, :], self.X_train[j,:,:])
+                                            for i,j in zip(*(indices)) )
             for in_product, index in zip(G_temp, indices):
                 G[index[0],index[1]] = in_product
         else:
-            for i,j in tqdm(indices):
-                G[i,j] = self.kernel(X_test[i,:,:], X_test[j,:,:])
-                G[j,i] = G[i,j]
+            for i,j in tqdm(zip(*(indices))):
+                G[i,j] = self.kernel(X_test[i,:,:], self.X_train[j,:,:])
+
+        # Filling the other triangular part of the matrix
+        if n_samples_test <= n_samples_train:
+            indices_other = np.tril_indices(n_samples_test,m=n_samples_train, k=-1)
+        else:
+            indices_other = np.triu_indices(n_samples_test,m=n_samples_train, k=1)
+
+        for i,j in zip(*(indices_other)):
+                G[i,j] = G[j,i]
+
         logging.info('Done')
         return self.classifier.predict(G)
-        logging.info('Finished training')
+        logging.info('Finished predicting')
