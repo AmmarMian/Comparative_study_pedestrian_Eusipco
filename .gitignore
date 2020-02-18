@@ -4,7 +4,6 @@
 *.mat
 *.npy
 *.out
-pedestrian_detection/Simulation_data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
