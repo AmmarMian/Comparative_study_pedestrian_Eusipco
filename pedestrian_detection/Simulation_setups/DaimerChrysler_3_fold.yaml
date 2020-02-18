@@ -1,0 +1,169 @@
+# @Author: miana1
+# @Description: Simulation setup file for testing the simulation setup system
+# @Date:   2019-10-28 14:40:31
+# @E-mail: ammar.mian@aalto.fi
+# @Last Modified by:   miana1
+# @Last Modified time: 2020-02-11 11:27:52
+# ----------------------------------------------------------------------------
+# Copyright 2019 Aalto University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ----------------------------------------------------------------------------
+
+# Parameters that govern the execution of all scripts
+global_setups:
+  Triton_jobs: # Relative to execution on Triton aalto servers, not local
+    parallel: True  # If for a given Triton job, we use parallel jobs for processing using joblib library.
+    number_of_jobs: 24  # Number of jobs in joblib library to use.
+    memory: '32G' # Memory to ask when submitting a job to Triton.
+    number_cpus: 12 # Number of cpus to ask ask when submitting a job to Triton.
+
+# Dataset parameters
+dataset:
+  name: 'DaimerChrysler' # Name of the dataset to read.
+
+# Sub-regions parameters
+sub-regions:
+  method: 'random' # Method for sub-regions sampling. Either 'random' or 'random_overlap'.
+  seed: 77 # Seed to reproduce the window sampling.
+  number_positive_windows: 100 # Number of windows to select for positive pedestrian images.
+  number_negative_windows: 2 # Number of windows to select for negative pedestrian images.
+  n_h: 2 # Number so that the minimum height of a region is \ceil{h/n_h}.
+  n_w: 2 # Number so that the minimum width of a region is \ceil{w/n_w}.
+  overlap_percent: 70 # Maximum overlap between regions in 'random_overlap' method.
+  timeout_method: 10 # Maximum time in minutes to sample regions in 'random_overlap' method.
+  progressbar: True # Show a tqdm progressbar or not for the sub-regions sampling.
+
+# Machine learning features parameters
+machine_learning_features:
+  method: 'SCM normalized by image' # Method to compute features for machine learning algorithms.
+  method_args: 'False' # A string of arguments that will be parsed in the method definition.
+  shuffle: False # Shuffle the features after computing them.
+  seed: 15 # Seed for shuffling the features.
+  delete_after_use: True # Delete features file after classification ended to save space.
+
+# Reducing Machine learning features parameters
+reducing_samples:
+  method: 'Variance to Log-Euclidean mean'
+  method_args: '[[10e-9, 50, None, None], None]' # A list of arguments by order: mean_function arugments, distance_function arguments.
+  number_to_keep: 2 # Number of sub-regions to keep for positive images.
+  shuffle: False # Shuffle the features after reducing them.
+  seed: 15 # Seed for shuffling the features.
+
+# Training parameters
+train:
+  pre-shuffle: True # If before doing K-fold splitting, we pre-shuffle.
+  n_splits: 3 # number of folds.
+  seed: 50 # Seed for shuffling and splitting.
+
+# Classification methods. Each sub-item of this item is a different methodology with associated paremeters
+# that will be coverted to a dict. A boolean is used to allow enabling hte method or not.
+classification_methods:
+  sklearn_svc_rbf:
+    # See details at:
+    # https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+    method_name: 'C-Support Vector Classification with Gaussian kernel'
+    parsing_string: 'sklearn svc' # Used for parsing the method in the parser function
+    method_args:
+       C: 1.0 # Penalty parameter C of the error term.
+       kernel: 'rbf' # Specifies the kernel type to be used in the algorithm. It must be one of 'linear', 'poly', 'rbf', 'sigmoid', 'precomputed' or a callable.
+       degree: 3 # Degree of the polynomial kernel function ('poly'). Ignored by all other kernels.
+       gamma: 'auto' # Kernel coefficient for 'rbf', 'poly' and 'sigmoid'.
+       coef0: 0.0 # Independent term in kernel function. It is only significant in 'poly' and 'sigmoid'.
+       shrinking: True # Whether to use the shrinking heuristic.
+       probability: False # Whether to enable probability estimates. This must be enabled prior to calling fit, and will slow down that method.
+       tol: 0.001 # Tolerance for stopping criterion.
+       # cache_size: 2000 # Specify the size of the kernel cache (in MB).
+       # class_weight: None # Set the parameter C of class i to class_weight[i]*C for SVC.
+       verbose: False # Enable verbose output.
+       max_iter: -1 # Hard limit on iterations within solver, or -1 for no limit.
+       decision_function_shape: 'ovr' # Whether to return a one-vs-rest ('ovr') decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one ('ovo') decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2). However, one-vs-one ('ovo') is always used as multi-class strategy.
+       random_state: # The seed of the pseudo random number generator used when shuffling the data for probability estimates.
+
+  sklearn_svc_linear:
+    # See details at:
+    # https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+    method_name: 'C-Support Vector Classification with Linear kernel'
+    parsing_string: 'sklearn svc' # Used for parsing the method in the parser function
+    method_args:
+       C: 1.0 # Penalty parameter C of the error term.
+       kernel: 'linear' # Specifies the kernel type to be used in the algorithm. It must be one of 'linear', 'poly', 'rbf', 'sigmoid', 'precomputed' or a callable.
+       shrinking: True # Whether to use the shrinking heuristic.
+       probability: False # Whether to enable probability estimates. This must be enabled prior to calling fit, and will slow down that method.
+       tol: 0.001 # Tolerance for stopping criterion.
+       # cache_size: 2000 # Specify the size of the kernel cache (in MB).
+       # class_weight: None # Set the parameter C of class i to class_weight[i]*C for SVC.
+       verbose: False # Enable verbose output.
+       max_iter: -1 # Hard limit on iterations within solver, or -1 for no limit.
+       decision_function_shape: 'ovr' # Whether to return a one-vs-rest ('ovr') decision function of shape (n_samples, n_classes) as all other classifiers, or the original one-vs-one ('ovo') decision function of libsvm which has shape (n_samples, n_classes * (n_classes - 1) / 2). However, one-vs-one ('ovo') is always used as multi-class strategy.
+       random_state: # The seed of the pseudo random number generator used when shuffling the data for probability estimates.
+
+  kernel_spd_rbf_svc:
+    method_name: 'C-Support Vector Classification with Riemannian RBF kernel on SPD matrices'
+    parsing_string: 'spd kernel rbf svc' # Used for parsing the method in the parser function
+    method_args:
+       gamma: 'auto' # Width of the kernel function
+       p: 2 # Power to computer the variance for gamma = 'auto'
+       C: 1.0 # Penalty parameter C of the error term.
+       shrinking: True # Whether to use the shrinking heuristic.
+       probability: False # Whether to enable probability estimates. This must be enabled prior to calling fit, and will slow down that method.
+       tol: 0.001 # Tolerance for stopping criterion.
+       # cache_size: 2000 # Specify the size of the kernel cache (in MB).
+       # class_weight: None # Set the parameter C of class i to class_weight[i]*C for SVC.
+       verbose: False # Enable verbose output.
+       max_iter: -1 # Hard limit on iterations within solver, or -1 for no limit.
+       random_state: # The seed of the pseudo random number generator used when shuffling the data for probability estimates.
+
+  logitboost_euclidean:
+    method_name: 'LogitBoost with decision stump on vectorized SPD matrices'
+    parsing_string: 'logitboost' # Used for parsing the method in the parser function
+    method_args:
+       base_estimator: 'decision stump' # The base estimator from which the LogitBoost classifier is built.
+       n_estimators: 50 # The number of estimators per class in the ensemble.
+       weight_trim_quantile: 0.05 # Threshold for weight trimming
+       max_response: 4.0 # Maximum response value to allow when fitting the base estimators.
+       learning_rate: 1.0 # The learning rate shrinks the contribution of each classifier by `learning_rate` during fitting.
+       bootstrap: False # If True, each boosting iteration trains the base estimator using a weighted bootstrap sample of the training data.
+       random_state: # Seed used by the random number generator.
+
+  logitboost_riemannian:
+    method_name: 'Riemannian LogitBoost with decision stump on SPD matrices'
+    parsing_string: 'riemannian logitboost' # Used for parsing the method in the parser function
+    method_args:
+       base_estimator: 'decision stump' # The base estimator from which the LogitBoost classifier is built.
+       n_estimators: 50 # The number of estimators per class in the ensemble.
+       weight_trim_quantile: 0.05 # Threshold for weight trimming
+       max_response: 4.0 # Maximum response value to allow when fitting the base estimators.
+       learning_rate: 1.0 # The learning rate shrinks the contribution of each classifier by `learning_rate` during fitting.
+       bootstrap: False # If True, each boosting iteration trains the base estimator using a weighted bootstrap sample of the training data.
+       random_state: # Seed used by the random number generator.
+
+  knn_riemannian:
+    method_name: 'Riemannian KNearestNeighbor'
+    parsing_string: 'riemannian knn' # Used for parsing the method in the parser function
+    method_args:
+       n_neighbors: 5 # Number of neighbors.
+       metric: 'riemann' # The type of metric used for distance estimation.
+
+  mdm_riemannian:
+    method_name: 'Riemannian MDM'
+    parsing_string: 'riemannian mdm' # Used for parsing the method in the parser function
+    method_args:
+       metric: 'riemann' # The type of metric used for distance estimation.
+
+  ts_logistic_regression:
+    method_name: 'Logistic Regression in Tangent Space'
+    parsing_string: 'ts logistic regression' # Used for parsing the method in the parser function
+    method_args:
+       tsupdate: True # Activate tangent space update for covariance shift correction between training and test
+       metric: 'riemann' # The type of metric used for distance estimation.
