@@ -7,7 +7,7 @@
 # @Date:   2020-01-14 11:19:58
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-24 12:03:30
+# @Last Modified time: 2020-01-31 11:17:38
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -115,12 +115,17 @@ if __name__ == '__main__':
     for method_input in simulation_setup['classification_methods'].values():
         method = parsing_methods.parse_machine_learning_method(method_input['parsing_string'],
                             method_input['method_name'], method_input['method_args'])
-        method.set_parallel(args.parallel, args.n_jobs)
+
+        # Setting parallel if applicable
+        set_parallel = getattr(method, "set_parallel", None)
+        if callable(set_parallel):
+            method.set_parallel(args.parallel, args.n_jobs)
+
         methods_list.append(method)
 
     # Doing K-fold splitting
     if simulation_setup['train']['pre-shuffle']:
-        X, y,  = shuffle(X, y, random_state=simulation_setup['train']['seed'])
+        X, y  = shuffle(X, y, random_state=simulation_setup['train']['seed'])
 
     kf = KFold(n_splits=simulation_setup['train']['n_splits'],
                 random_state= simulation_setup['train']['seed'])
@@ -155,5 +160,5 @@ if __name__ == '__main__':
     # Saving results
     logging.info('Saving training results')
     with open(os.path.join(os.path.dirname(path_to_machine_learning_features_data_file), 'Results_training'), 'wb') as f:
-        pickle.dump([methods_list, accuracy_list], f)
+        pickle.dump([methods_k_fold, accuracy_list], f)
 

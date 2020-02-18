@@ -175,7 +175,8 @@ class sample_covariance_feature_normalized_method(machine_learning_feature_compu
     def preprocessing(self, feature_tensor):
         h, w, d = feature_tensor.shape
         C_R = np.cov(feature_tensor.reshape(h*w,d).T, bias=self.bias)
-        self.isqrtm_C_R = invsqrtm(C_R)
+        # self.isqrtm_C_R = invsqrtm(C_R)
+        self.isqrtm_C_R = np.diag(1/np.sqrt(np.diag(C_R)))
 
 
 class raw_tensor_method(machine_learning_feature_computation_method):
@@ -349,4 +350,3 @@ def wrapper_student_t_estimator_covariance_mle(X, args):
                                 X - np.tile(mean_vector, (X.shape[0], 1)),
                                                         d, tol, iter_max)
     return vech(Sigma)
-

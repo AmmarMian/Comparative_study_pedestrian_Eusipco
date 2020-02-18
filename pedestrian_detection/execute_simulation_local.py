@@ -6,7 +6,7 @@
 # @Date:   2019-10-28 15:17:49
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-16 15:30:19
+# @Last Modified time: 2020-01-28 11:09:34
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -168,6 +168,21 @@ if __name__ == '__main__':
             log_file_temp = os.path.join(path_to_simulation_folder, f'log_training.txt').replace(" ", "\\ ")
             k_fold_training_script += f" &> {log_file_temp}\n"
             f.write(k_fold_training_script)
+
+            # ---------------------------------------------------------------------------------------------------------------------------
+            # Executing testing using all methods from each fold of the K-fold cross-validation
+            # ---------------------------------------------------------------------------------------------------------------------------
+            temp = os.path.join(folder_of_present_script, "Scripts/compute_testing_local.py").replace(" ", "\\ ")
+
+            testing_script = f"python3 {temp} " \
+                               f" {path_to_data_storage_file} {os.path.join(path_to_simulation_folder, f'Results_training')} "
+
+            if simulation_setup['global_setups']['Triton_jobs']['parallel']:
+                testing_script += f" -p -j {simulation_setup['global_setups']['Triton_jobs']['number_of_jobs']}"
+
+            log_file_temp = os.path.join(path_to_simulation_folder, f'log_testing.txt').replace(" ", "\\ ")
+            testing_script += f" &> {log_file_temp}\n"
+            f.write(testing_script)
 
         # Running the bash file
         logging.info(f'Executing script {execution_script_path}')

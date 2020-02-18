@@ -4,7 +4,7 @@
 # @Date:   2019-10-17 13:39:08
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-16 14:25:30
+# @Last Modified time: 2020-01-28 14:50:01
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -412,7 +412,7 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
         # --------------------------------------------------------------------
         # 2 - Reading testing images
         # --------------------------------------------------------------------
-        logging.info("Reading testing images se for class %s", self.name)
+        logging.info("Reading testing images for class %s", self.name)
 
         for data_index in ['T1', 'T2']:
             path_this_data_batch = os.path.join(self.dataset_path, data_index)
@@ -439,7 +439,7 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
                 image = np.array(_read_pgm(image_path))
                 images_list.append(image)
 
-        indexes_testing = np.arange(len(images_list),len(images_labels))
+        indexes_testing = np.arange(len(indexes_training),len(images_labels))
         logging.info('%d testing images read', len(indexes_testing))
 
         self.images_labels = images_labels

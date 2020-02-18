@@ -5,7 +5,7 @@
 # @Date:   2019-11-11 16:36:04
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-21 15:50:17
+# @Last Modified time: 2020-01-31 11:35:50
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -25,6 +25,8 @@
 import numpy as np
 from .euclidean_methods import *
 from .kernel_methods import *
+from .riemannian_logitboost import *
+from .other_riemannian import *
 
 
 class MethodNotRecognized(Exception):
@@ -50,7 +52,22 @@ def parse_machine_learning_method(parsing_string, method_name, method_args):
 
     elif parsing_string == 'spd kernel rbf svc':
         return spd_rbf_kernel_svc(method_name, method_args)
+
+    elif parsing_string == 'logitboost':
+        return logitboost_method(method_name, method_args)
+
+    elif parsing_string == 'riemannian logitboost':
+        return wrapper_riemannian_logitboost(method_name, method_args)
+
+    elif parsing_string == 'riemannian knn':
+        return wrapper_KNN(method_name, method_args)
+
+    elif parsing_string == 'riemannian mdm':
+        return wrapper_MDM(method_name, method_args)
+
+    elif parsing_string == 'ts logistic regression':
+        return wrapper_TSclassifier(method_name, method_args)
+
     else:
         logging.error("The method %s is not recognized, ending here", method_name)
         raise MethodNotRecognized
-

@@ -4,7 +4,7 @@
 # @Date:   2020-01-21 14:25:05
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-24 14:49:32
+# @Last Modified time: 2020-02-11 15:52:49
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -23,21 +23,21 @@
 
 
 import logging
-from .utils.base import *
-from sklearn.svm import SVC
-from pyriemann.utils.distance import distance_logeuclid
-from pyriemann.utils.mean import mean_riemann, mean_logeuclid
 import numpy as np
 from tqdm import trange, tqdm
 from itertools import combinations
 from joblib import Parallel, delayed
+from scipy.spatial.distance import cdist
+from .utils.base import *
+from pyriemann.utils.base import logm
+from pyriemann.utils.distance import distance_logeuclid
+from pyriemann.utils.mean import mean_riemann, mean_logeuclid
+from psdlearning.utils.algebra import vec
+from sklearn.svm import SVC
 
 
-def riemannian_rbf_kernel(gamma):
-
-    def _riemannian_rbf_kernel_fixed_gamma(X, Y):
-        return np.exp(-gamma*distance_logeuclid(X,Y))
-    return _riemannian_rbf_kernel_fixed_gamma
+def vec_logm(X):
+    return vec(logm(X))
 
 
 class spd_rbf_kernel_svc(machine_learning_method):
@@ -64,7 +64,8 @@ class spd_rbf_kernel_svc(machine_learning_method):
 
        Attributs:
             * classifier: a sklearn SVC instance which is used for the classification
-            * kernel: a function to compute the rbf kernel given the gamma used
+            * logm_X_train = contain the logm of all training samples used to fit
+                             for faster computation.
     """
 
     def __init__(self, method_name, method_args):
@@ -80,7 +81,6 @@ class spd_rbf_kernel_svc(machine_learning_method):
         if isinstance(svc_args['gamma'], float):
             if svc_args['gamma'] > 0:
                 self.gamma = svc_args['gamma']
-                self.kernel = riemannian_rbf_kernel(self.gamma)
             else:
                 logging.error("gamma should be a positive float")
                 raise ValueError("gamma should be a positive float")
@@ -113,7 +113,7 @@ class spd_rbf_kernel_svc(machine_learning_method):
         sigma = 0
         for matrix in X_train:
             sigma += np.power(distance_logeuclid(matrix, mu), self.p)
-        self.kernel = riemannian_rbf_kernel(np.power(sigma, -1/self.p))
+        self.gamma = len(X_train) / sigma
 
 
     def fit(self, X_train, y_train):
@@ -125,36 +125,40 @@ class spd_rbf_kernel_svc(machine_learning_method):
             labels corresponding to each sample.
         """
 
-        logging.info(f'Training Riemannian RBF kernel SVC on {len(y_train)} samples')
+        logging.debug(f'Training Riemannian RBF kernel SVC on {len(y_train)} samples')
         # Computing gamma if needed:
         if self.gamma == 'auto':
-            logging.info('Computing gamma automatically')
+            logging.debug('Computing gamma automatically')
             self._compute_gamma_auto(X_train)
-            logging.info('Computing done')
+            logging.debug('Computing done')
 
         # Computing Gram matrix
-        logging.info('Computing Gram matrix')
-        n_samples = X_train.shape[0]
-        G = np.eye(n_samples)
-        indices = combinations(range(n_samples), r=2)
+        logging.debug('Computing Gram matrix for training')
+
+        # Compute logm then using scipy functions to gain time
+        logging.debug(f'Computing logm of {X_train.shape[0]} matrices')
         if self.parallel:
-            logging.info('Doing it in parallel')
-            G_temp = Parallel(n_jobs=self.n_jobs)(delayed(
-                        self.kernel)(X_train[i,:,:], X_train[j,:,:])
-                                            for i,j in indices )
-            for in_product, index in zip(G_temp, indices):
-                G[index[0],index[1]] = in_product
-                G[index[1],index[0]] = in_product
+            logm_X_train = Parallel(n_jobs=self.n_jobs)(delayed(vec_logm)(Sigma) for Sigma in X_train)
         else:
-            logging.info('Doing it sequentially')
-            for i,j in tqdm(indices):
-                G[i,j] = self.kernel(X_train[i,:,:], X_train[j,:,:])
-                G[j,i] = G[i,j]
-        logging.info('Done')
-        self.classifier.fit(G, y_train)
-        G = None
-        self.X_train = X_train
-        logging.info('Finished training')
+            logm_X_train = np.empty((X_train.shape[0], X_train.shape[1]**2))
+            for i in range(X_train.shape[0]):
+                logm_X_train[i] = vec_logm(X_train[i])
+
+        logging.debug(f'Computing pairwise distances')
+        pairwise_distances = cdist(logm_X_train, logm_X_train, 'sqeuclidean')
+
+        gram_matrix = np.exp(-self.gamma*pairwise_distances)
+        logging.debug('Done')
+
+        logging.debug('Fitting SVC')
+        self.classifier.fit(gram_matrix, y_train)
+        logging.debug('Done')
+        gram_matrix = None
+
+        self.logm_X_train = np.array(logm_X_train)
+        logging.debug('Finished training')
+
+        return self
 
 
     def predict(self, X_test):
@@ -168,37 +172,28 @@ class spd_rbf_kernel_svc(machine_learning_method):
         """
 
         # Computing Gram matrix
-        logging.info(f'Predicting {X_test.shape[0]} samples based on Riemannian RBF kernel SVC')
-        n_samples_train = self.X_train.shape[0]
+        logging.debug(f'Predicting {X_test.shape[0]} samples based on Riemannian RBF kernel SVC')
+        n_samples_train = self.logm_X_train.shape[0]
         n_samples_test = X_test.shape[0]
-        logging.info('Computing Gram matrix')
-        G = np.zeros((n_samples_test, n_samples_train))
 
-        # Separating the case n_samples_test < n_samples_train from the other
-        if n_samples_test <= n_samples_train:
-            indices = np.triu_indices(n_samples_test,m=n_samples_train)
-        else:
-            indices = np.tril_indices(n_samples_test,m=n_samples_train)
+        # Computing Gram matrix
+        logging.debug('Computing Gram matrix for training')
 
+        # Compute logm then using scipy functions to gain time
+        logging.debug(f'Computing logm of {X_test.shape[0]} matrices')
         if self.parallel:
-            G_temp = Parallel(n_jobs=self.n_jobs)(delayed(
-                       self.kernel)(X_test[i, :, :], self.X_train[j,:,:])
-                                            for i,j in zip(*(indices)) )
-            for in_product, index in zip(G_temp, indices):
-                G[index[0],index[1]] = in_product
+            logm_X_test = Parallel(n_jobs=self.n_jobs)(delayed(vec_logm)(Sigma) for Sigma in X_test)
         else:
-            for i,j in tqdm(zip(*(indices))):
-                G[i,j] = self.kernel(X_test[i,:,:], self.X_train[j,:,:])
+            logm_X_test = np.empty((X_test.shape[0], X_test.shape[1]**2))
+            for i in range(X_test.shape[0]):
+                logm_X_test[i] = vec_logm(X_test[i])
 
-        # Filling the other triangular part of the matrix
-        if n_samples_test <= n_samples_train:
-            indices_other = np.tril_indices(n_samples_test,m=n_samples_train, k=-1)
-        else:
-            indices_other = np.triu_indices(n_samples_test,m=n_samples_train, k=1)
+        logging.debug(f'Computing pairwise distances')
+        pairwise_distances = cdist(logm_X_test, self.logm_X_train, 'sqeuclidean')
 
-        for i,j in zip(*(indices_other)):
-                G[i,j] = G[j,i]
+        gram_matrix = np.exp(-self.gamma*pairwise_distances)
+        logging.debug('Done')
 
-        logging.info('Done')
-        return self.classifier.predict(G)
-        logging.info('Finished predicting')
+        logging.debug('Doing prediction')
+        return self.classifier.predict(gram_matrix)
+        logging.debug('Finished predicting')

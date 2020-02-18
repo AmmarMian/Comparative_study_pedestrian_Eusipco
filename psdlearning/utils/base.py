@@ -4,7 +4,7 @@
 # @Date:   2020-01-21 15:28:53
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-23 10:59:59
+# @Last Modified time: 2020-01-29 13:37:48
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -21,7 +21,11 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-class machine_learning_method():
+from sklearn.base import ClassifierMixin
+from sklearn.ensemble import BaseEnsemble
+
+
+class machine_learning_method(BaseEnsemble, ClassifierMixin):
     """
         A formal class to organize machine learning methods in order to have
         a common framework.

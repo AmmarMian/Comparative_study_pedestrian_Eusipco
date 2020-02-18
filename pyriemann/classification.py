@@ -372,7 +372,7 @@ class TSclassifier(BaseEstimator, ClassifierMixin):
     """
 
     def __init__(self, metric='riemann', tsupdate=False,
-                 clf=LogisticRegression()):
+                 clf=LogisticRegression(solver='lbfgs')):
         """Init."""
         self.metric = metric
         self.tsupdate = tsupdate

@@ -4,7 +4,7 @@
 # @Date:   2019-10-24 16:01:13
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2020-01-24 14:39:33
+# @Last Modified time: 2020-01-30 11:25:25
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -30,7 +30,8 @@ from tqdm import tqdm
 
 def is_pos_def(x):
     eigvals, eigvects = sp.linalg.eigh(x, check_finite=False)
-    return np.all(eigvals > 0)
+    return (np.all(eigvals > 0) & (np.linalg.matrix_rank(x)==len(x)))
+    #return np.logical_not(np.any(np.isnan(np.log(eigvals))))
 
 
 def matprint(mat, fmt="g"):

@@ -4,7 +4,7 @@
 # @Date:   2019-10-10 18:01:54
 # @E-mail: ammar.mian@aalto.fi
 # @Last Modified by:   miana1
-# @Last Modified time: 2019-12-10 17:16:49
+# @Last Modified time: 2020-02-03 13:26:09
 # ----------------------------------------------------------------------------
 # Copyright 2019 Aalto University
 #
@@ -133,7 +133,8 @@ def create_matplotlib_figure(figsize=(5,3.5), dpi=120, grid=True, xlabel='',
         plt.title(title)
 
     # Grid
-    plt.grid(grid)
+    if grid:
+        plt.grid(color='white', linestyle='-.', linewidth=0.7)
 
     return fig, ax
 
