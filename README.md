@@ -15,7 +15,7 @@ The code is made in Python 3.7 with an Anaconda distribution. The pyriemann pack
 
 ## Datasets
 
-Two set of data can be used: The INRAI dataset available at http://pascal.inrialpes.fr/data/human/ and the DaimerChrysler one available at http://www.gavrila.net/Datasets/Daimler_Pedestrian_Benchmark_D/Daimler_Mono_Ped__Detection_Be/daimler_mono_ped__detection_be.html.
+Two set of data can be used: The INRAI dataset available at http://pascal.inrialpes.fr/data/human/ and the DaimerChrysler one available at http://www.gavrila.net/Datasets/Daimler_Pedestrian_Benchmark_D/Daimler_Mono_Ped__Class__Bench/daimler_mono_ped__class__bench.html.
 
 After downloading the datasets, extract them to some folder and update the paths in paths.yaml. The path should be relative to base of this repository, which is the folder of this README.md.
 
