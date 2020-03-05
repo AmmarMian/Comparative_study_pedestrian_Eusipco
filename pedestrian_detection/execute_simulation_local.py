@@ -100,6 +100,7 @@ if __name__ == '__main__':
             sub_regions_sampling_script = f"python3 {temp} {simulation_setup['dataset']['name']} {simulation_setup['sub-regions']['seed']}" \
                                f" {simulation_setup['sub-regions']['number_positive_windows']} {simulation_setup['sub-regions']['number_negative_windows']}" \
                                f" {simulation_setup['sub-regions']['n_w']} {simulation_setup['sub-regions']['n_h']}" \
+                               f" -s {simulation_setup['sub-regions']['setup']}" \
                                f" -m {simulation_setup['sub-regions']['method']} -o {simulation_setup['sub-regions']['overlap_percent']}" \
                                f" -t {simulation_setup['sub-regions']['timeout_method']}"
             if simulation_setup['sub-regions']['progressbar']:
@@ -115,7 +116,7 @@ if __name__ == '__main__':
             temp = os.path.join(folder_of_present_script, "Scripts/compute_machine_learning_features.py").replace(" ", "\\ ")
 
             sub_region_filename = os.path.join(folder_of_present_script,
-            "Simulation_data/Sub_regions/", f"{simulation_setup['dataset']['name']}_method_{simulation_setup['sub-regions']['method']}_" \
+            "Simulation_data/Sub_regions/", f"{simulation_setup['dataset']['name']}_setup_{simulation_setup['sub-regions']['setup']}_method_{simulation_setup['sub-regions']['method']}_" \
             f"pos_{simulation_setup['sub-regions']['number_positive_windows']}_neg_{simulation_setup['sub-regions']['number_negative_windows']}_" \
             f"nh_{simulation_setup['sub-regions']['n_h']}_nw_{simulation_setup['sub-regions']['n_w']}_seed_{simulation_setup['sub-regions']['seed']}").replace(" ", "\\ ")
 

@@ -45,6 +45,7 @@ class pedestrian_dataset():
         self.dataset_path = dataset_path
         self.images_list = None
         self.images_labels = None
+        self.image_paths = None
         self.features = None
         self.features_labels = None
         self.number_of_images = 0

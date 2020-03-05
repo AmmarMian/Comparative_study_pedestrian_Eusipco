@@ -263,9 +263,10 @@ def compute_machine_learning_features_batch(feature_tensors_list,
         Inputs:
             * feature_tensors_list = a list of 3-D numpy arrays corresponding to the
                                      8-dimensional feature tensors.
-            * sub_regions_list = a list of tuples (x_j, y_j, w_j, h_j), where:
-                - (x_j, y_j) are the coordinates of the upper-left corner,
-                - (w_j, h_j) are the with and height of the region.
+            * sub_regions_list = a list (to have different subregions for each image)
+                                 of a list of tuples (x_j, y_j, w_j, h_j), where:
+                    - (x_j, y_j) are the coordinates of the upper-left corner,
+                    - (w_j, h_j) are the with and height of the region.
             * method = a machine_learning_feature_computation_method class.
             * parallel = a boolean to activate parallel computation or not.
             * n_jobs = number of jobs to create for parallel computation.
@@ -280,20 +281,24 @@ def compute_machine_learning_features_batch(feature_tensors_list,
     logging.info("Computing machine learning features for %d feature tensors", len(feature_tensors_list))
 
     if not parallel:
-        pbar = tqdm(total=len(feature_tensors_list)*len(sub_regions_list))
+        # Compute the number of times we have to compute a features
+        total = 0
+        for sub_regions in sub_regions_list:
+            total += len(feature_tensors_list)*len(sub_regions)
+        pbar = tqdm(total=total)
         machine_learning_features_images_list = []
-        for feature_tensor in feature_tensors_list:
+        for feature_tensor, sub_regions in zip(feature_tensors_list, sub_regions_list):
             machine_learning_features_sub_region_list = \
                 compute_machine_learning_features_for_one_feature_tensor(feature_tensor,
-                                                    sub_regions_list, method, pbar=pbar)
+                                                    sub_regions, method, pbar=pbar)
             machine_learning_features_images_list.append(machine_learning_features_sub_region_list)
         pbar.close()
     else:
         # Computing things ang parallel and obtaining the result in a list
         machine_learning_features_images_list = Parallel(n_jobs=n_jobs)(delayed(
             compute_machine_learning_features_for_one_feature_tensor)(feature_tensor,
-                                                    sub_regions_list, method)
-                                        for feature_tensor in feature_tensors_list )
+                                                    sub_regions, method)
+                                        for feature_tensor, sub_regions in zip(feature_tensors_list, sub_regions_list) )
 
     return machine_learning_features_images_list
 

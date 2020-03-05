@@ -79,82 +79,86 @@ if __name__ == '__main__':
     with open(path_to_machine_learning_features_data_file, 'rb') as f:
         dataset = pickle.load(f)
 
-    # First obtaining training and testing so we don't lose the information
-    train_samples = [dataset['features'][i] for i in dataset['indexes train']]
-    test_samples = [dataset['features'][i] for i in dataset['indexes test']]
-    train_labels = [dataset['labels'][i] for i in dataset['indexes train']]
-    test_labels = [dataset['labels'][i] for i in dataset['indexes test']]
-    train_images_paths = [dataset['images paths'][i] for i in dataset['indexes train']]
-    test_images_paths = [dataset['images paths'][i] for i in dataset['indexes test']]
+    if dataset['sub-regions']['setup'] == 'sample_one_pos_one_neg':
+        # First obtaining training and testing so we don't lose the information
+        train_samples = [dataset['features'][i] for i in dataset['indexes train']]
+        test_samples = [dataset['features'][i] for i in dataset['indexes test']]
+        train_labels = [dataset['labels'][i] for i in dataset['indexes train']]
+        test_labels = [dataset['labels'][i] for i in dataset['indexes test']]
+        train_images_paths = [dataset['images paths'][i] for i in dataset['indexes train']]
+        test_images_paths = [dataset['images paths'][i] for i in dataset['indexes test']]
 
-    # Obtaining positive and negative samples
-    positive_train_indices = [i for i, x in enumerate(train_labels) if x == 1]
-    negative_train_indices = [i for i, x in enumerate(train_labels) if x == -1]
-    positive_test_indices = [i for i, x in enumerate(test_labels) if x == 1]
-    negative_test_indices = [i for i, x in enumerate(test_labels) if x == -1]
+        # Obtaining positive and negative samples
+        positive_train_indices = [i for i, x in enumerate(train_labels) if x == 1]
+        negative_train_indices = [i for i, x in enumerate(train_labels) if x == -1]
+        positive_test_indices = [i for i, x in enumerate(test_labels) if x == 1]
+        negative_test_indices = [i for i, x in enumerate(test_labels) if x == -1]
 
-    positive_train_samples = [train_samples[i] for i in positive_train_indices]
-    positive_test_samples = [test_samples[i] for i in positive_test_indices]
-    negative_train_samples = [train_samples[i] for i in negative_train_indices]
-    negative_test_samples = [test_samples[i] for i in negative_test_indices]
+        positive_train_samples = [train_samples[i] for i in positive_train_indices]
+        positive_test_samples = [test_samples[i] for i in positive_test_indices]
+        negative_train_samples = [train_samples[i] for i in negative_train_indices]
+        negative_test_samples = [test_samples[i] for i in negative_test_indices]
 
-    # Reducing positive samples
-    positive_samples = np.array(positive_train_samples + positive_test_samples)
-    indexes = method.reduce_samples(positive_samples, args.number_to_keep)
-    positive_samples = positive_samples[:, indexes, :]
+        # Reducing positive samples
+        positive_samples = np.array(positive_train_samples + positive_test_samples)
+        indexes = method.reduce_samples(positive_samples, args.number_to_keep)
+        positive_samples = positive_samples[:, indexes, :]
 
-    positive_sub_regions = [dataset['positive sub-regions'][i] for i in indexes]
+        positive_sub_regions = [dataset['sub-regions']['sub_regions'][0][i] for i in indexes]
 
-    # Merging positive and negative samples
-    positive_samples = [list(i) for i in list(positive_samples)]
-    positive_train_samples = positive_samples[:len(positive_train_indices)]
-    positive_test_samples = positive_samples[len(positive_train_indices):]
+        # Merging positive and negative samples
+        positive_samples = [list(i) for i in list(positive_samples)]
+        positive_train_samples = positive_samples[:len(positive_train_indices)]
+        positive_test_samples = positive_samples[len(positive_train_indices):]
 
-    machine_learning_features_list = positive_train_samples + negative_train_samples +\
-                                     positive_test_samples + negative_test_samples
+        machine_learning_features_list = positive_train_samples + negative_train_samples +\
+                                         positive_test_samples + negative_test_samples
 
-    machine_learning_labels_list = [1]*len(positive_train_samples) + \
-                                   [-1]*len(negative_train_samples) + \
-                                   [1]*len(positive_test_samples) + \
-                                   [-1]*len(negative_test_samples)
+        machine_learning_labels_list = [1]*len(positive_train_samples) + \
+                                       [-1]*len(negative_train_samples) + \
+                                       [1]*len(positive_test_samples) + \
+                                       [-1]*len(negative_test_samples)
 
 
-    image_paths = [train_images_paths[i] for i in positive_train_indices] + \
-                  [train_images_paths[i] for i in negative_train_indices] + \
-                  [test_images_paths[i] for i in positive_test_indices] + \
-                  [test_images_paths[i] for i in negative_test_indices]
+        image_paths = [train_images_paths[i] for i in positive_train_indices] + \
+                      [train_images_paths[i] for i in negative_train_indices] + \
+                      [test_images_paths[i] for i in positive_test_indices] + \
+                      [test_images_paths[i] for i in negative_test_indices]
 
-    indexes_train_temp = np.arange( len(positive_train_indices)+len(negative_train_indices))
-    indexes_test_temp = np.arange( len(positive_train_indices)+len(negative_train_indices),
-                                   len(machine_learning_labels_list) )
+        indexes_train_temp = np.arange( len(positive_train_indices)+len(negative_train_indices))
+        indexes_test_temp = np.arange( len(positive_train_indices)+len(negative_train_indices),
+                                       len(machine_learning_labels_list) )
 
-    if args.shuffle:
-        temp = list(np.arange(len(machine_learning_labels_list)))
-        machine_learning_features_list, machine_learning_labels_list, image_paths, temp = \
-                                    shuffle(machine_learning_features_list,
-                                            machine_learning_labels_list,
-                                            image_paths, temp,
-                                            random_state=args.shuffle_seed)
-        indexes_train = []
-        for i in indexes_train_temp:
-            indexes_train.append(temp.index(i))
-        indexes_test = []
-        for i in indexes_test_temp:
-            indexes_test.append(temp.index(i))
+        if args.shuffle:
+            temp = list(np.arange(len(machine_learning_labels_list)))
+            machine_learning_features_list, machine_learning_labels_list, image_paths, temp = \
+                                        shuffle(machine_learning_features_list,
+                                                machine_learning_labels_list,
+                                                image_paths, temp,
+                                                random_state=args.shuffle_seed)
+            indexes_train = []
+            for i in indexes_train_temp:
+                indexes_train.append(temp.index(i))
+            indexes_test = []
+            for i in indexes_test_temp:
+                indexes_test.append(temp.index(i))
 
+        else:
+            indexes_train = indexes_train_temp
+            indexes_test = indexes_test_temp
+
+        dataset['features'] = machine_learning_features_list
+        dataset['labels'] = machine_learning_labels_list
+        dataset['sub-regions']['sub_regions'][0] = positive_sub_regions
+        dataset['images paths'] = image_paths
+        dataset['indexes train']= indexes_train
+        dataset['indexes test']= indexes_test
+
+        with open(path_to_machine_learning_features_data_file, 'wb') as f:
+            logging.info("Rewriting temporary machine learning features data into %s",
+                                            path_to_machine_learning_features_data_file)
+            logging.info("Don't forget to delete the file after use!")
+            pickle.dump(dataset, f)
     else:
-        indexes_train = indexes_train_temp
-        indexes_test = indexes_test_temp
-
-    dataset['features'] = machine_learning_features_list
-    dataset['labels'] = machine_learning_labels_list
-    dataset['positive sub-regions'] = positive_sub_regions
-    dataset['images paths'] = image_paths
-    dataset['indexes train']= indexes_train
-    dataset['indexes test']= indexes_test
-
-    with open(path_to_machine_learning_features_data_file, 'wb') as f:
-        logging.info("Rewriting temporary machine learning features data into %s",
-                                        path_to_machine_learning_features_data_file)
-        logging.info("Don't forget to delete the file after use!")
-        pickle.dump(dataset, f)
+        logging.warning('Sorry, the setup %s does not allow to reduce samples.', dataset['sub-regions']['setup'])
+        logging.info('Ending here.')

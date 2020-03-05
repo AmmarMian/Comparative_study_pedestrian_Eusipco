@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Author: miana1
-# @Description: A file that allows to compute a sampling of sub_regions for both 
+# @Description: A file that allows to compute a sampling of sub_regions for both
 #               positive and negative training images
 # @Date:   2019-10-23 17:17:49
 # @E-mail: ammar.mian@aalto.fi
@@ -176,12 +176,15 @@ if __name__ == '__main__':
     parser.add_argument("dataset", help="Name of dataset to read")
     parser.add_argument("seed", type=int, default=None,
                          help="Seed for rng to have reproducible results")
-    parser.add_argument("N_R_pos",  type=int, help="Number of sub_regions to create for positive examples"+\
+    parser.add_argument("N_R_pos",  type=int, help="Number of sub_regions to create"+\
                         " (Not guaranteed in the case of overlap constraint).")
-    parser.add_argument("N_R_neg",  type=int, help="Number of sub_regions to create for positive examples"+\
+    parser.add_argument("N_R_neg",  type=int, help="Number of sub_regions to create for negative images"+\
                         " (Not guaranteed in the case of overlap constraint).")
     parser.add_argument("n_w",  type=int, help="An int so that the sub_regions are of width that is minimum \ceil{w/n_w}")
     parser.add_argument("n_h",  type=int, help="An int so that the sub_regions are of height that is minimum \ceil{h/n_h}")
+    parser.add_argument("-s", "--setup",  choices=['sample_each_image', 'sample_one', 'sample_one_pos_one_neg'],
+                        default='sample_each_image', help="Setup for sampling. " +\
+                            "Either 'sample_each_image' (default), 'sample_one' or 'sample_one_pos_one_neg'")
     parser.add_argument("-m", "--method",  choices=['random', 'random_overlap'],
                         default='random', help="Method for sampling. " +\
                             "Either 'random' (default) or 'random_overlap'")
@@ -201,7 +204,8 @@ if __name__ == '__main__':
     path_to_data_storage_file = os.path.join(folder_of_present_script,
             "../Simulation_data/Eight_dimensional_features", args.dataset)
     path_to_sub_regions_storage_file = os.path.join(folder_of_present_script,
-            "../Simulation_data/Sub_regions/", args.dataset+"_method_"+args.method+\
+            "../Simulation_data/Sub_regions/", args.dataset+"_setup_"+args.setup+\
+            "_method_"+args.method+\
             "_pos_"+str(args.N_R_pos)+"_neg_"+str(args.N_R_neg)+\
             "_nh_"+str(args.n_h)+"_nw_"+str(args.n_w)+"_seed_"+str(args.seed))
 
@@ -224,49 +228,93 @@ if __name__ == '__main__':
             # Taking into account the seed for the generation
             rng = np.random.RandomState(args.seed)
 
-            # Computing sampling for positive images
-            logging.info("Doing %d positive sub-regions", args.N_R_pos)
-            feature_tensors, image_paths = dataset.get_positive_examples_feature_tensors()
-            h = np.inf
-            w = np.inf
-            # Just in case, the shape is not consistent, we take the lowest possible size
-            for feature_tensor in feature_tensors:
-                shape = feature_tensor.shape
-                h = int(np.min( [h, shape[0]] ))
-                w = int(np.min( [w, shape[1]] ))
+            # Managing the different setups possible
+            logging.info('Sampling with setup %s and method %s', args.setup, args.method)
+            if args.setup == 'sample_each_image':
+                sub_regions_list = []
+                for index, feature_tensor in enumerate(tqdm(dataset.feature_tensors)):
+                    h, w, p = feature_tensor.shape
+                    if dataset.images_labels[index] == 1:
+                        N_R = args.N_R_pos
+                    else:
+                        N_R = args.N_R_neg
 
-            if args.method == "random":
-                pos_sub_regions_list = generate_sub_regions_random(args.N_R_pos, h, w, args.n_h, args.n_w,
-                                                                seed=rng, progress=args.progress)
+                    if args.method == "random":
+                        sub_regions_image = generate_sub_regions_random(N_R, h, w, args.n_h, args.n_w,
+                                                                        seed=rng, progress=False)
+                    else:
+                        sub_regions_image = generate_sub_regions_random_with_overlap_constraint(N_R, h, w, args.n_h, args.n_w,
+                                        overlap_threshold=args.overlap_threshold, timeout=args.timeout, seed=rng, progress=False)
+                    sub_regions_list.append(sub_regions_image)
+
+            elif args.setup == 'sample_one':
+                # Just in case, the shape is not consistent, we take the lowest possible size
+                h = np.inf
+                w = np.inf
+                for feature_tensor in dataset.feature_tensors:
+                    shape = feature_tensor.shape
+                    h = int(np.min( [h, shape[0]] ))
+                    w = int(np.min( [w, shape[1]] ))
+
+                if args.method == "random":
+                    sub_regions_list = generate_sub_regions_random(args.N_R_pos, h, w, args.n_h, args.n_w,
+                                                                    seed=rng, progress=args.progress)
+                else:
+                    sub_regions_list = generate_sub_regions_random_with_overlap_constraint(args.N_R_pos, h, w, args.n_h, args.n_w,
+                                    overlap_threshold=args.overlap_threshold, timeout=args.timeout, seed=rng, progress=args.progress)
+
             else:
-                pos_sub_regions_list = generate_sub_regions_random_with_overlap_constraint(args.N_R_pos, h, w, args.n_h, args.n_w,
-                                overlap_threshold=args.overlap_threshold, timeout=args.timeout, seed=rng, progress=args.progress)
+                # Computing sampling for positive images
+                logging.info("Doing %d positive sub-regions", args.N_R_pos)
+                feature_tensors, image_paths = dataset.get_positive_examples_feature_tensors()
+                # Just in case, the shape is not consistent, we take the lowest possible size
+                h = np.inf
+                w = np.inf
+                for feature_tensor in feature_tensors:
+                    shape = feature_tensor.shape
+                    h = int(np.min( [h, shape[0]] ))
+                    w = int(np.min( [w, shape[1]] ))
+                if args.method == "random":
+                    pos_sub_regions_list = generate_sub_regions_random(args.N_R_pos, h, w, args.n_h, args.n_w,
+                                                                    seed=rng, progress=args.progress)
+                else:
+                    pos_sub_regions_list = generate_sub_regions_random_with_overlap_constraint(args.N_R_pos, h, w, args.n_h, args.n_w,
+                                    overlap_threshold=args.overlap_threshold, timeout=args.timeout, seed=rng, progress=args.progress)
 
-            # Computing sampling for negative images
-            logging.info("Doing %d negative sub-regions", args.N_R_neg)
-            feature_tensors, image_paths = dataset.get_negative_examples_feature_tensors()
-            h = np.inf
-            w = np.inf
-            # Just in case, the shape is not consistent, we take the lowest possible size
-            for feature_tensor in feature_tensors:
-                shape = feature_tensor.shape
-                h = int(np.min( [h, shape[0]] ))
-                w = int(np.min( [w, shape[1]] ))
+                # Computing sampling for negative images
+                logging.info("Doing %d negative sub-regions", args.N_R_neg)
+                feature_tensors, image_paths = dataset.get_negative_examples_feature_tensors()
+                # Just in case, the shape is not consistent, we take the lowest possible size
+                h = np.inf
+                w = np.inf
+                for feature_tensor in feature_tensors:
+                    shape = feature_tensor.shape
+                    h = int(np.min( [h, shape[0]] ))
+                    w = int(np.min( [w, shape[1]] ))
+                if args.method == "random":
+                    neg_sub_regions_list = generate_sub_regions_random(args.N_R_neg, h, w, args.n_h, args.n_w,
+                                                                    seed=rng, progress=args.progress)
+                else:
+                    neg_sub_regions_list = generate_sub_regions_random_with_overlap_constraint(args.N_R_neg, h, w, args.n_h, args.n_w,
+                                    overlap_threshold=args.overlap_threshold, timeout=args.timeout, seed=rng, progress=args.progress)
 
-            if args.method == "random":
-                neg_sub_regions_list = generate_sub_regions_random(args.N_R_neg, h, w, args.n_h, args.n_w,
-                                                                seed=rng, progress=args.progress)
-            else:
-                neg_sub_regions_list = generate_sub_regions_random_with_overlap_constraint(args.N_R_neg, h, w, args.n_h, args.n_w,
-                                overlap_threshold=args.overlap_threshold, timeout=args.timeout, seed=rng, progress=args.progress)
+                sub_regions_list = [pos_sub_regions_list, neg_sub_regions_list]
+
 
             # Storing data using pickle
+            to_store = {'Dataset':args.dataset,
+                        'setup': args.setup,
+                        'seed': args.seed,
+                        'N_R_pos': args.N_R_pos,
+                        'N_R_neg': args.N_R_neg,
+                        'n_h': args.n_h,
+                        'n_w': args.n_w,
+                        'sub_regions': sub_regions_list}
             with open(path_to_sub_regions_storage_file, 'wb') as f:
                 logging.info("Writing sub-regions into %s", path_to_sub_regions_storage_file)
-                pickle.dump([pos_sub_regions_list, neg_sub_regions_list], f)
+                pickle.dump(to_store, f)
 
         except FileNotFoundError:
             logging.error("Data file %s was not found, ending here.", path_to_data_storage_file)
     else:
         logging.info("File %s already exists, ending here", path_to_sub_regions_storage_file)
-

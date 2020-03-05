@@ -34,13 +34,14 @@ dataset:
 
 # Sub-regions parameters
 sub-regions:
+  setup: 'sample_each_image' # Choice between 'sample_each_image', 'sample_one', 'sample_one_pos_one_neg'
   method: 'random' # Method for sub-regions sampling. Either 'random' or 'random_overlap'.
   seed: 77 # Seed to reproduce the window sampling.
-  number_positive_windows: 100 # Number of windows to select for positive pedestrian images.
-  number_negative_windows: 2 # Number of windows to select for negative pedestrian images.
+  number_positive_windows: 2 # Number of windows to select for positive pedestrian images.
+  number_negative_windows: 2 # Number of windows to select for negative pedestrian images. (only for setups 'sample_each_image' and 'sample_one_pos_one_neg')
   n_h: 2 # Number so that the minimum height of a region is \ceil{h/n_h}.
   n_w: 2 # Number so that the minimum width of a region is \ceil{w/n_w}.
-  overlap_percent: 70 # Maximum overlap between regions in 'random_overlap' method.
+  overlap_percent: 70 # Mininum overlap between regions in 'random_overlap' method.
   timeout_method: 10 # Maximum time in minutes to sample regions in 'random_overlap' method.
   progressbar: True # Show a tqdm progressbar or not for the sub-regions sampling.
 
@@ -53,6 +54,7 @@ machine_learning_features:
   delete_after_use: True # Delete features file after classification ended to save space.
 
 # Reducing Machine learning features parameters
+# Only works for setup 'sample_one_pos_one_neg'
 reducing_samples:
   method: 'Variance to Log-Euclidean mean'
   method_args: '[[10e-9, 50, None, None], None]' # A list of arguments by order: mean_function arugments, distance_function arguments.
@@ -148,18 +150,18 @@ classification_methods:
        bootstrap: False # If True, each boosting iteration trains the base estimator using a weighted bootstrap sample of the training data.
        random_state: # Seed used by the random number generator.
 
-  knn_riemannian:
-    method_name: 'Riemannian KNearestNeighbor'
-    parsing_string: 'riemannian knn' # Used for parsing the method in the parser function
-    method_args:
-       n_neighbors: 5 # Number of neighbors.
-       metric: 'riemann' # The type of metric used for distance estimation.
-
-  mdm_riemannian:
-    method_name: 'Riemannian MDM'
-    parsing_string: 'riemannian mdm' # Used for parsing the method in the parser function
-    method_args:
-       metric: 'riemann' # The type of metric used for distance estimation.
+  # knn_riemannian:
+  #   method_name: 'Riemannian KNearestNeighbor'
+  #   parsing_string: 'riemannian knn' # Used for parsing the method in the parser function
+  #   method_args:
+  #      n_neighbors: 5 # Number of neighbors.
+  #      metric: 'riemann' # The type of metric used for distance estimation.
+  #
+  # mdm_riemannian:
+  #   method_name: 'Riemannian MDM'
+  #   parsing_string: 'riemannian mdm' # Used for parsing the method in the parser function
+  #   method_args:
+  #      metric: 'riemann' # The type of metric used for distance estimation.
 
   ts_logistic_regression:
     method_name: 'Logistic Regression in Tangent Space'

@@ -84,65 +84,83 @@ if __name__ == '__main__':
             with open(path_to_data_storage_file, 'rb') as f:
                 dataset = pickle.load(f)
 
-            # Read sub_regions_lists
+            # Read sub regions sampling data
             logging.info("Reading sub-regions from file %s", path_to_sub_regions_storage_file)
             with open(path_to_sub_regions_storage_file, 'rb') as f:
-                temp = pickle.load(f)
-                pos_sub_regions_list = temp[0]
-                neg_sub_regions_list = temp[1]
+                sub_regions_data = pickle.load(f)
 
 
-            # First let's obtain train and test samples to keep this information
-            train_feature_tensors, train_labels, train_images_paths = dataset.get_train_feature_tensors()
-            test_feature_tensors, test_labels, test_images_paths = dataset.get_test_feature_tensors()
-
-            positive_train_indices = [i for i, x in enumerate(train_labels) if x == 1]
-            negative_train_indices = [i for i, x in enumerate(train_labels) if x == -1]
-            positive_test_indices = [i for i, x in enumerate(test_labels) if x == 1]
-            negative_test_indices = [i for i, x in enumerate(test_labels) if x == -1]
-
-            positive_feature_tensors_list = [train_feature_tensors[i] for i in positive_train_indices] + \
-                                            [test_feature_tensors[i] for i in positive_test_indices]
-            negative_feature_tensors_list = [train_feature_tensors[i] for i in negative_train_indices] + \
-                                            [test_feature_tensors[i] for i in negative_test_indices]
-
-
-            # Compute features for positive and negative examples separately
-            logging.info("Computing features for positive examples")
-            positive_machine_learning_features = \
-                compute_machine_learning_features_batch(positive_feature_tensors_list,
-                                                        pos_sub_regions_list, method,
+            # Managing different sampling setups strategies
+            if sub_regions_data['setup'] == 'sample_each_image':
+                machine_learning_features_list = \
+                    compute_machine_learning_features_batch(dataset.feature_tensors,
+                                                            sub_regions_data['sub_regions'], method,
+                                                            parallel=args.parallel, n_jobs=args.n_jobs)
+                machine_learning_labels_list = dataset.images_labels
+                image_paths = dataset.image_paths
+                indexes_train_temp = dataset.indexes_training
+                indexes_test_temp = dataset.indexes_testing
+            elif sub_regions_data['setup'] == 'sample_one':
+                machine_learning_features_list = \
+                    compute_machine_learning_features_batch(dataset.feature_tensors,
+                                                        [sub_regions_data['sub_regions']]*len(dataset.feature_tensors), method,
                                                         parallel=args.parallel, n_jobs=args.n_jobs)
-            logging.info("Computing features for negative examples")
-            negative_machine_learning_features = \
-                compute_machine_learning_features_batch(negative_feature_tensors_list,
-                                                        neg_sub_regions_list, method,
-                                                        parallel=args.parallel, n_jobs=args.n_jobs)
+                machine_learning_labels_list = dataset.images_labels
+                image_paths = dataset.image_paths
+                indexes_train_temp = dataset.indexes_training
+                indexes_test_temp = dataset.indexes_testing
+            else:
 
-            # Merging features and shuffling
-            train_positive_machine_learning_features = positive_machine_learning_features[:len(positive_train_indices)]
-            test_positive_machine_learning_features = positive_machine_learning_features[len(positive_train_indices):]
-            train_negative_machine_learning_features = negative_machine_learning_features[:len(negative_train_indices)]
-            test_negative_machine_learning_features = negative_machine_learning_features[len(negative_train_indices):]
+                # First let's obtain train and test samples to keep this information
+                train_feature_tensors, train_labels, train_images_paths = dataset.get_train_feature_tensors()
+                test_feature_tensors, test_labels, test_images_paths = dataset.get_test_feature_tensors()
 
-            machine_learning_features_list = train_positive_machine_learning_features + \
-                                             train_negative_machine_learning_features + \
-                                             test_positive_machine_learning_features + \
-                                             test_negative_machine_learning_features
+                positive_train_indices = [i for i, x in enumerate(train_labels) if x == 1]
+                negative_train_indices = [i for i, x in enumerate(train_labels) if x == -1]
+                positive_test_indices = [i for i, x in enumerate(test_labels) if x == 1]
+                negative_test_indices = [i for i, x in enumerate(test_labels) if x == -1]
 
-            machine_learning_labels_list = [1]*len(train_positive_machine_learning_features) + \
-                                           [-1]*len(train_negative_machine_learning_features) + \
-                                           [1]*len(test_positive_machine_learning_features) + \
-                                           [-1]*len(test_negative_machine_learning_features)
+                positive_feature_tensors_list = [train_feature_tensors[i] for i in positive_train_indices] + \
+                                                [test_feature_tensors[i] for i in positive_test_indices]
+                negative_feature_tensors_list = [train_feature_tensors[i] for i in negative_train_indices] + \
+                                                [test_feature_tensors[i] for i in negative_test_indices]
 
-            image_paths = [train_images_paths[i] for i in positive_train_indices] + \
-                          [train_images_paths[i] for i in negative_train_indices] + \
-                          [test_images_paths[i] for i in positive_test_indices] + \
-                          [test_images_paths[i] for i in negative_test_indices]
+                # Compute features for positive and negative examples separately
+                logging.info("Computing features for positive examples")
+                positive_machine_learning_features = \
+                    compute_machine_learning_features_batch(positive_feature_tensors_list,
+                                                            [sub_regions_data['sub_regions'][0]]*len(positive_feature_tensors_list), method,
+                                                            parallel=args.parallel, n_jobs=args.n_jobs)
+                logging.info("Computing features for negative examples")
+                negative_machine_learning_features = \
+                    compute_machine_learning_features_batch(negative_feature_tensors_list,
+                                                            [sub_regions_data['sub_regions'][1]]*len(negative_feature_tensors_list), method,
+                                                            parallel=args.parallel, n_jobs=args.n_jobs)
 
-            indexes_train_temp = np.arange( len(positive_train_indices)+len(negative_train_indices))
-            indexes_test_temp = np.arange( len(positive_train_indices)+len(negative_train_indices),
-                                      len(machine_learning_labels_list))
+                # Merging features and shuffling
+                train_positive_machine_learning_features = positive_machine_learning_features[:len(positive_train_indices)]
+                test_positive_machine_learning_features = positive_machine_learning_features[len(positive_train_indices):]
+                train_negative_machine_learning_features = negative_machine_learning_features[:len(negative_train_indices)]
+                test_negative_machine_learning_features = negative_machine_learning_features[len(negative_train_indices):]
+
+                machine_learning_features_list = train_positive_machine_learning_features + \
+                                                 train_negative_machine_learning_features + \
+                                                 test_positive_machine_learning_features + \
+                                                 test_negative_machine_learning_features
+
+                machine_learning_labels_list = [1]*len(train_positive_machine_learning_features) + \
+                                               [-1]*len(train_negative_machine_learning_features) + \
+                                               [1]*len(test_positive_machine_learning_features) + \
+                                               [-1]*len(test_negative_machine_learning_features)
+
+                image_paths = [train_images_paths[i] for i in positive_train_indices] + \
+                              [train_images_paths[i] for i in negative_train_indices] + \
+                              [test_images_paths[i] for i in positive_test_indices] + \
+                              [test_images_paths[i] for i in negative_test_indices]
+
+                indexes_train_temp = np.arange( len(positive_train_indices)+len(negative_train_indices))
+                indexes_test_temp = np.arange( len(positive_train_indices)+len(negative_train_indices),
+                                          len(machine_learning_labels_list))
 
             if args.shuffle:
                 temp = list(np.arange(len(machine_learning_labels_list)))
@@ -170,9 +188,8 @@ if __name__ == '__main__':
                            'labels': np.array(machine_learning_labels_list),
                            'images paths': image_paths,
                            'indexes train': indexes_train,
-                           'indexes test':indexes_test,
-                           'positive sub-regions': pos_sub_regions_list,
-                           'negative sub-regions': neg_sub_regions_list}
+                           'indexes test': indexes_test,
+                           'sub-regions': sub_regions_data}
                 pickle.dump(dataset, f)
 
         except (FileNotFoundError, MethodNotRecognized) as e:

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=10:00:00      # 10 hours
+#SBATCH --time=20:00:00      # 10 hours
 #SBATCH --mem=32000   # 32G of memory
 #SBATCH --cpus-per-task=12
 
