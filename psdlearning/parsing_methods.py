@@ -68,6 +68,15 @@ def parse_machine_learning_method(parsing_string, method_name, method_args):
     elif parsing_string == 'ts logistic regression':
         return wrapper_TSclassifier(method_name, method_args)
 
+    elif parsing_string == 'logistic regression':
+        return sklearn_LogisticRegression_method(method_name, method_args)
+
+    elif parsing_string == 'euclidean knn':
+        return sklearn_knn_method(method_name, method_args)
+
+    elif parsing_string == 'euclidean mdm':
+        return sklearn_mdm_method(method_name, method_args) 
+
     else:
         logging.error("The method %s is not recognized, ending here", method_name)
         raise MethodNotRecognized

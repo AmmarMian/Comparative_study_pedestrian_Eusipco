@@ -25,6 +25,90 @@ from .utils.base import *
 from .utils.logitboost import LogitBoost
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
+import logging
+
+
+class sklearn_knn_method(machine_learning_method):
+    """
+       A wrapper for the KNN of sklearn.
+    """
+    def __init__(self, method_name, method_args):
+        super(sklearn_knn_method, self).__init__(method_name, method_args)
+        self.init_method()
+
+    def init_method(self):
+        self.classifier = KNeighborsClassifier(**self.method_args)
+
+    def __str__(self):
+        string_to_print += f"\n Intern KNeighborsClassifier classifier:\n{str(self.classifier)}"
+        return string_to_print
+
+
+    def fit(self, X_train, y_train):
+        """
+        Inputs:
+            * X_train = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+            * y_train = ndarray shape (n_samples, 1)
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_train.shape[:2]
+        self.classifier.fit(X_train.reshape((n_samples, n_channels**2)), y_train)
+        return self
+
+    def predict(self, X_test):
+        """
+        Inputs:
+            * X_test = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+        Outputs:
+            * y_test = ndarray shape (n_samples, 1) of predicted
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_test.shape[:2]
+        return self.classifier.predict(X_test.reshape((n_samples, n_channels**2)))
+
+
+class sklearn_mdm_method(machine_learning_method):
+    """
+       A wrapper for the MDM of sklearn.
+    """
+    def __init__(self, method_name, method_args):
+        super(sklearn_mdm_method, self).__init__(method_name, method_args)
+        self.init_method()
+
+    def init_method(self):
+        self.classifier = NearestCentroid()
+
+    def __str__(self):
+        string_to_print += f"\n Intern NearestCentroid classifier:\n{str(self.classifier)}"
+        return string_to_print
+
+    def fit(self, X_train, y_train):
+        """
+        Inputs:
+            * X_train = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+            * y_train = ndarray shape (n_samples, 1)
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_train.shape[:2]
+        self.classifier.fit(X_train.reshape((n_samples, n_channels**2)), y_train)
+        return self
+
+    def predict(self, X_test):
+        """
+        Inputs:
+            * X_test = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+        Outputs:
+            * y_test = ndarray shape (n_samples, 1) of predicted
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_test.shape[:2]
+        return self.classifier.predict(X_test.reshape((n_samples, n_channels**2)))
 
 
 class sklearn_svc_method(machine_learning_method):
@@ -69,6 +153,57 @@ class sklearn_svc_method(machine_learning_method):
         return self.classifier.predict(X_test.reshape((n_samples, n_channels**2)))
 
 
+class sklearn_LogisticRegression_method(machine_learning_method):
+    """
+       A wrapper for the Logistic regression of sklearn: More details at:
+       https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
+    """
+    def __init__(self, method_name, method_args):
+        super(sklearn_LogisticRegression_method, self).__init__(method_name, method_args)
+        self.init_method()
+
+    def init_method(self, n_jobs=None):
+        self.method_args['n_jobs'] = n_jobs
+        self.classifier = LogisticRegression(**self.method_args)
+
+    def __str__(self):
+        string_to_print += f"\n Intern LogisticRegression classifier:\n{str(self.classifier)}"
+        return string_to_print
+
+    def set_parallel(self, is_parallel=False, n_jobs=8):
+        logging.warning('The call to this set_parallel method is reseting the class, and must be fitted again')
+        self.parallel = is_parallel
+        self.n_jobs = n_jobs
+
+        if self.parallel:
+            self.init_method(n_jobs)
+
+    def fit(self, X_train, y_train):
+        """
+        Inputs:
+            * X_train = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+            * y_train = ndarray shape (n_samples, 1)
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_train.shape[:2]
+        self.classifier.fit(X_train.reshape((n_samples, n_channels**2)), y_train)
+        return self
+
+
+    def predict(self, X_test):
+        """
+        Inputs:
+            * X_test = ndarray, shape (n_samples, n_channels, n_channels)
+            ndarray of SPD matrices.
+        Outputs:
+            * y_test = ndarray shape (n_samples, 1) of predicted
+            labels corresponding to each sample.
+        """
+        n_samples, n_channels = X_test.shape[:2]
+        return self.classifier.predict(X_test.reshape((n_samples, n_channels**2)))
+
+
 class logitboost_method(machine_learning_method):
     """
        A wrapper for the Euclidean logitboost. More details at:
@@ -77,7 +212,6 @@ class logitboost_method(machine_learning_method):
     def __init__(self, method_name, method_args):
         super(logitboost_method, self).__init__(method_name, method_args)
         self.init_method()
-
 
     def init_method(self):
 

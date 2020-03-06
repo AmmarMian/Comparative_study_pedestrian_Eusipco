@@ -32,6 +32,8 @@ import scipy as sp
 from tqdm import tqdm, trange
 from sklearn.svm import SVC
 from sklearn.utils import shuffle
+from sklearn.neighbors import  KNeighborsClassifier, NearestCentroid
+from sklearn.linear_model import LogisticRegression
 from joblib import Parallel, delayed
 from tqdm import tqdm, trange
 from scipy.stats import t, wishart
@@ -100,7 +102,7 @@ if __name__ == '__main__':
     from global_utils import *
     from psdlearning.utils import algebra
     from psdlearning import parsing_methods
-    from psdlearning.euclidean_methods import sklearn_svc_method, logitboost_method
+    from psdlearning.euclidean_methods import *
     from psdlearning.kernel_methods import spd_rbf_kernel_svc
     from psdlearning.riemannian_logitboost import wrapper_riemannian_logitboost
     from psdlearning.other_riemannian import wrapper_TSclassifier, wrapper_KNN, wrapper_MDM
@@ -200,11 +202,28 @@ if __name__ == '__main__':
     }
     riemannian_mdm = wrapper_MDM('Riemannian MDM', method_args)
 
+    # 9) Euclidean knn
+    method_args = {
+       'n_neighbors': 5
+    }
+    euclidean_knn = sklearn_knn_method('Euclidean KNN', method_args)
+
+    # 10) Euclidean mdm
+    euclidean_mdm = sklearn_mdm_method('Euclidean MDM', None)
+
+    # 11) Euclidan LogisticRegression
+    method_args = {
+       'C': 1.0,
+       'max_iter': 100
+    }
+    euclidean_logistic_regression = sklearn_LogisticRegression_method('Euclidean LogisticRegression', method_args)
 
 
-    ML_methods = [linear_svm, euclidean_rbf_svm, riemannian_rbf_svm,
+    ML_methods = [euclidean_rbf_svm, riemannian_rbf_svm,
             euclidean_logitboost, riemannian_logitboost, riemannian_knn,
-            ts_logistic_regression, riemannian_mdm]
+            ts_logistic_regression, riemannian_mdm, euclidean_knn,
+            euclidean_mdm, euclidean_logistic_regression]
+
 
     # ------------------------------------------------------------------------------------------------------------
     # Doing simulation by generating outliers
@@ -212,10 +231,11 @@ if __name__ == '__main__':
     logging.info('Computing simulation')
 
 
-    alpha_vec = np.linspace(0, 0.4, 10)
-    number_trials = 100
+    alpha_vec = np.linspace(0.01, 0.1, 5)
+    number_trials = 144
 
     if args.parallel:
+        logging.info('Parallel processing chosen')
         accuracy_list = Parallel(n_jobs=args.n_jobs)(delayed(do_one_trial)(X_train, y_train, X_test, y_test,
                                 ML_methods, alpha_vec, args.seed+trial) for trial in trange(number_trials))
         accuracy_list = np.array(accuracy_list)
@@ -230,6 +250,8 @@ if __name__ == '__main__':
 
     print(accuracy_list)
     logging.info('Results:\n'+str(accuracy_list))
+    with open('results_robustness_study', 'wb') as f:
+        pickle.dump(accuracy_list, f)
 
     # Saving results for plotting in a dictionary for each method
     results = {'alpha':alpha_vec}
@@ -239,15 +261,15 @@ if __name__ == '__main__':
         res_min = np.min(accuracy_list[:,:,i], axis=0)
         results[method.method_name] = {'mean': res_mean, 'min': res_min, 'max':res_max,
                                         'values':accuracy_list[:,:,i]}
-    with open('results_robustness_study_%s' % dataset['name'], 'wb') as f:
+    with open('results_robustness_study', 'wb') as f:
         pickle.dump(results, f)
 
     fig, ax = create_matplotlib_figure()
-    markers = ['x', 'o', 's', 'd', '+', '>', '^', '8']
+    markers = ['x', 'o', 's', 'd', '+', '>', '^', '8', 'p', 'h', '<', 'v']
     for method, marker in zip(results, markers):
         if method != 'alpha':
-            plt.plot(results['alpha'], results[method]['mean'], marker=marker)
+            plt.plot(results['alpha'], results[method]['mean'], marker=marker, label=method)
             print(f'{method}: ' +str(results[method]['mean']))
     plt.legend()
-    plt.savefig('results_robustness_study_%s.png' % dataset['name'])
+    plt.savefig('results_robustness_study.png')
     plt.show()

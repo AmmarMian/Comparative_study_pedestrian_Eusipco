@@ -4,6 +4,11 @@
 *.mat
 *.npy
 *.out
+pedestrian_detection/Simulation_data/Simulations_setups_data/Old
+pedestrian_detection/Simulation_data/Simulations_setups_data/INRIA_4_fold_sample_one_pos_one_neg
+pedestrian_detection/Simulation_data/Simulations_setups_data/DaimerChrysler_3_fold_sample_one_pos_one_neg
+pedestrian_detection/Simulation_data/Eight_dimensional_features/DaimerChrysler
+pedestrian_detection/Simulation_data/Eight_dimensional_features/INRIA
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

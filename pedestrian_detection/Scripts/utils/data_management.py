@@ -401,8 +401,8 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
             for file in os.listdir(os.path.join(path_this_data_batch, 'non-ped_examples'))
             if file.endswith('.pgm')]
 
-            image_paths += positive_training_images_names_list_temp
-            images_labels += [-1]*len(positive_training_images_names_list_temp)
+            image_paths += negative_training_images_names_list_temp
+            images_labels += [-1]*len(negative_training_images_names_list_temp)
             for image_path in tqdm(negative_training_images_names_list_temp):
                 image = np.array(_read_pgm(image_path))
                 images_list.append(image)
@@ -434,8 +434,8 @@ class DaimerChrysler_base_dataset(pedestrian_dataset):
             for file in os.listdir(os.path.join(path_this_data_batch, 'non-ped_examples'))
             if file.endswith('.pgm')]
 
-            image_paths += positive_testing_images_names_list_temp
-            images_labels += [-1]*len(positive_testing_images_names_list_temp)
+            image_paths += negative_testing_images_names_list_temp
+            images_labels += [-1]*len(negative_testing_images_names_list_temp)
             for image_path in tqdm(negative_testing_images_names_list_temp):
                 image = np.array(_read_pgm(image_path))
                 images_list.append(image)

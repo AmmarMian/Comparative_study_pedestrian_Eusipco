@@ -39,10 +39,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute testing phase for all methods')
     parser.add_argument("data_file", help="Path (From base) to the file containing machine learning features")
     parser.add_argument("result_testing", help="Path (From base) to the file containing results of testing")
-    parser.add_argument("-p", "--parallel", action="store_true",
-                         help="Enable parallel computation")
-    parser.add_argument("-j", "--n_jobs", default=8, type=int,
-                         help="Number of jobs for parallel computation")
     args = parser.parse_args()
 
     # We always need to know where this script is with regards to base of
@@ -107,10 +103,6 @@ if __name__ == '__main__':
     for methods_list_one_fold in tqdm(methods_k_fold):
         accuracy_this_fold = []
         for method in methods_list_one_fold:
-            # Setting parallel if applicable
-            set_parallel = getattr(method, "set_parallel", None)
-            if callable(set_parallel):
-                method.set_parallel(args.parallel, args.n_jobs)
             y_predicted = method.predict(X_test)
             accuracy = (y_test == y_predicted).sum() / len(y_test)
             accuracy_this_fold.append(accuracy)

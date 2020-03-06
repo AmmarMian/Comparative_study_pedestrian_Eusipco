@@ -161,4 +161,3 @@ if __name__ == '__main__':
     logging.info('Saving training results')
     with open(os.path.join(os.path.dirname(path_to_machine_learning_features_data_file), 'Results_training'), 'wb') as f:
         pickle.dump([methods_k_fold, accuracy_list], f)
-

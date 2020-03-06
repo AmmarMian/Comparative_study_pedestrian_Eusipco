@@ -178,9 +178,6 @@ if __name__ == '__main__':
             testing_script = f"python3 {temp} " \
                                f" {path_to_data_storage_file} {os.path.join(path_to_simulation_folder, f'Results_training')} "
 
-            if simulation_setup['global_setups']['Triton_jobs']['parallel']:
-                testing_script += f" -p -j {simulation_setup['global_setups']['Triton_jobs']['number_of_jobs']}"
-
             log_file_temp = os.path.join(path_to_simulation_folder, f'log_testing.txt').replace(" ", "\\ ")
             testing_script += f" &> {log_file_temp}\n"
             f.write(testing_script)
